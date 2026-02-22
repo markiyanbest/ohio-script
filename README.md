@@ -1,4 +1,4 @@
--- markiyanbest's script (V42 - THE STABLE BASE) [UPGRADED HYBRID EDITION + ESP + FULL FIXES]
+-- markiyanbest's script (V42 - THE STABLE BASE) [UPGRADED HYBRID EDITION + ESP + MAGNET + AUTOSAFE + SHIFT LOCK BUG FIX]
 local Players = game:GetService("Players")
 local lp = Players.LocalPlayer
 local RS = game:GetService("RunService")
@@ -23,6 +23,8 @@ local Config = {
     FPSBoost = false, AntiSeat = false,
     Fly = false, FlySpeedValue = 50, WalkSpeedValue = 65,
     ESP = false, NoSpread = false, InfJump = false, Noclip = false,
+    Magnet = false, MagnetTarget = nil,
+    AutoSafe = false, SafeHealth = 35,
     -- == [ ПОВНИЙ БІЛИЙ СПИСОК (ДОДАНО ВСЮ ЗБРОЮ ТА ПРЕДМЕТИ) ] ==
     Loot = {
         "void", "gem", "shard", "suitcase nuke", "nuke", "nextbot", "ninja star", "stop sign", "printer", "money printer", "steal", "materials", "candy",
@@ -35,11 +37,12 @@ local Config = {
         "minigun", "goldak47", "adminak47", "adminrpg", "taser", "pepperspray", "moneygun", "ninjastars", "shurikens", "tomahawk", "heavyvest", "militaryvest", "helmet", 
         "mask", "backpack", "flashlight", "radio", "moneybag", "atmcards", "coffee", "moneyprinter", "cloverballoon", "moneyballoon", "heartballoon", "luckyblockcrate", "sabercrate"
     },
-    -- == [ РОЗШИРЕНИЙ ЧОРНИЙ СПИСОК (ДОДАНО WORKBENCH) ] ==
+    -- == [ РОЗШИРЕНИЙ ЧОРНИЙ СПИСОК ] ==
     Blacklist = {
-        "trash", "newspaper", "bottle", "leaf", "stick", "shoe", "apple", "soda", "burger", "hotdog", "stop", "ore", "ladder", "fireworks", "press", "paintball",
+        "trash", "newspaper", "bottle", "leaf", "stick", "shoe", "apple", "soda", "burger", "hotdog", "stop", "ore", "ladder", "fireworks", "press", "paintball", "spawn", "bloxiade", "cola", "spin",
         "requires", "door", "gate", "barrier", "cell", "unlock after", "cash earned", "garage", "ammo", "pickaxe", "sign", "equip", "put", "on", "food", "gloves", "spray", "ignite",
-        "brew", "latte", "espresso", "drink", "vending machine", "cola", "bloxy", "bat", "katana", "flashbang", "skateboard", "bike", "off", "turn", "ninja", "workbench"
+        "brew", "latte", "espresso", "drink", "vending machine", "cola", "bloxy", "bat", "katana", "flashbang", "skateboard", "bike", "off", "turn", "ninja", "workbench", "edit",
+        "open", "fill", "drain", "close"
     }
 }
 
@@ -97,7 +100,7 @@ local function StartRobbery()
     lp.Character:PivotTo(CFrame.new(COORDS["SAFE_ZONE"] + Vector3.new(0, 3, 0)))
 end
 
--- == [ AIM LOCK ] ==
+-- == [ AIM ТА MAGNET LOCK ] ==
 local function getClosest()
     local target, dist = nil, 800
     for _, v in pairs(Players:GetPlayers()) do
@@ -147,7 +150,6 @@ RS.RenderStepped:Connect(function()
             local head = char:FindFirstChild("Head")
             
             if Config.ESP and hum and head and hum.Health > 0 then
-                -- Створюємо GUI над головою
                 local espGui = head:FindFirstChild("MarkiyanESP")
                 if not espGui then
                     espGui = Instance.new("BillboardGui")
@@ -167,7 +169,6 @@ RS.RenderStepped:Connect(function()
                     
                     espGui.Parent = head
                     
-                    -- Підсвітка самого гравця
                     local highlight = Instance.new("Highlight")
                     highlight.Name = "MarkiyanHighlight"
                     highlight.FillColor = Color3.new(1, 0, 0)
@@ -177,7 +178,6 @@ RS.RenderStepped:Connect(function()
                     highlight.Parent = char
                 end
                 
-                -- Оновлюємо текст (HP та Відстань)
                 local textLabel = espGui:FindFirstChildWhichIsA("TextLabel")
                 if textLabel then
                     local root = lp.Character and lp.Character:FindFirstChild("HumanoidRootPart")
@@ -187,13 +187,12 @@ RS.RenderStepped:Connect(function()
                     
                     textLabel.Text = string.format("%s\nHP: %d/%d | Dist: %dm", v.Name, hp, maxHp, dist)
                     
-                    -- Колір залежно від кількості HP
                     if hp / maxHp >= 0.6 then
-                        textLabel.TextColor3 = Color3.new(0, 1, 0) -- Зелений
+                        textLabel.TextColor3 = Color3.new(0, 1, 0)
                     elseif hp / maxHp >= 0.3 then
-                        textLabel.TextColor3 = Color3.new(1, 1, 0) -- Жовтий
+                        textLabel.TextColor3 = Color3.new(1, 1, 0)
                     else
-                        textLabel.TextColor3 = Color3.new(1, 0, 0) -- Червоний
+                        textLabel.TextColor3 = Color3.new(1, 0, 0)
                     end
                 end
             else
@@ -249,7 +248,7 @@ RS.Stepped:Connect(function()
     end
 end)
 
--- == [ FLY ТА ШВИДКІСТЬ ] ==
+-- == [ HEARTBEAT: FLY, SPEED, MAGNET, AUTOSAFE ] ==
 RS.Heartbeat:Connect(function()
     if lp.Character and lp.Character:FindFirstChild("Humanoid") and lp.Character:FindFirstChild("HumanoidRootPart") then
         local hum = lp.Character.Humanoid
@@ -290,6 +289,30 @@ RS.Heartbeat:Connect(function()
         else
             hum.PlatformStand = false
         end
+
+        if Config.Magnet then
+            local IsAlive = Config.MagnetTarget and Config.MagnetTarget.Parent and Config.MagnetTarget.Character and Config.MagnetTarget.Character:FindFirstChild("Humanoid") and Config.MagnetTarget.Character.Humanoid.Health > 0
+            if not IsAlive then
+                Config.MagnetTarget = getClosest()
+            end
+            
+            if Config.MagnetTarget and Config.MagnetTarget.Character and Config.MagnetTarget.Character:FindFirstChild("HumanoidRootPart") then
+                local tHRP = Config.MagnetTarget.Character.HumanoidRootPart
+                root.CFrame = tHRP.CFrame * CFrame.new(0, 0, 3) 
+                root.AssemblyLinearVelocity = tHRP.AssemblyLinearVelocity
+            end
+        else
+            Config.MagnetTarget = nil
+        end
+
+        if Config.AutoSafe then
+            if hum.Health > 0 and hum.Health <= Config.SafeHealth then
+                local distToSafe = (root.Position - COORDS["SAFE_ZONE"]).Magnitude
+                if distToSafe > 20 then
+                    lp.Character:PivotTo(CFrame.new(COORDS["SAFE_ZONE"] + Vector3.new(0, 3, 0)))
+                end
+            end
+        end
     end
 end)
 
@@ -300,7 +323,7 @@ UIS.JumpRequest:Connect(function()
     end
 end)
 
--- == [ GUI ТА УНІВЕРСАЛЬНИЙ DRAG ] ==
+-- == [ GUI ТА ФІКСОВАНА СИСТЕМА ПЕРЕТЯГУВАННЯ ] ==
 local SG = Instance.new("ScreenGui", lp.PlayerGui); SG.Name = "MarkiyanPro"; SG.ResetOnSpawn = false
 local IsMobile = UIS.TouchEnabled
 
@@ -312,52 +335,38 @@ Main.Size = UDim2.new(0, MainWidth, 0, MainHeight)
 Main.AnchorPoint = Vector2.new(0.5, 0.5)
 Main.Position = UDim2.new(0.5, 0, 0.5, 0)
 Main.BackgroundColor3 = Color3.fromRGB(12, 12, 12); Main.Visible = false
-Main.Active = true -- Щоб кліки не проходили крізь меню
 Instance.new("UICorner", Main)
 
 local Header = Instance.new("TextLabel", Main); Header.Size = UDim2.new(1, 0, 0, 30); Header.Text = "Markiyan PRO V42 Hybrid"; Header.BackgroundColor3 = Color3.fromRGB(20, 20, 20); Header.TextColor3 = Color3.new(1, 0.8, 0); Header.Font = Enum.Font.SourceSansBold; Instance.new("UICorner", Header)
-Header.Active = true
 
--- ФУНКЦІЯ ПЕРЕТЯГУВАННЯ ОБ'ЄКТІВ (DRAG)
+-- ГЛОБАЛЬНА ФУНКЦІЯ ПЕРЕТЯГУВАННЯ (ЗАХИСТ ВІД SHIFT LOCK)
 local function MakeDraggable(guiObject, dragTarget)
-    local dragging
-    local dragInput
-    local dragStart
-    local startPos
-
-    local function update(input)
-        local delta = input.Position - dragStart
-        dragTarget.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
-    end
+    local dragging = false
+    local dragStart = nil
+    local startPos = nil
 
     guiObject.InputBegan:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
             dragging = true
             dragStart = input.Position
             startPos = dragTarget.Position
-            
-            input.Changed:Connect(function()
-                if input.UserInputState == Enum.UserInputState.End then
-                    dragging = false
-                end
-            end)
-        end
-    end)
-
-    guiObject.InputChanged:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
-            dragInput = input
         end
     end)
 
     UIS.InputChanged:Connect(function(input)
-        if input == dragInput and dragging then
-            update(input)
+        if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+            local delta = input.Position - dragStart
+            dragTarget.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+        end
+    end)
+
+    UIS.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            dragging = false
         end
     end)
 end
 
--- Робимо меню перетягуваним (за шапку Header)
 MakeDraggable(Header, Main)
 
 local Scroll = Instance.new("ScrollingFrame", Main); Scroll.Size = UDim2.new(1, -10, 1, -40); Scroll.Position = UDim2.new(0, 5, 0, 35); Scroll.BackgroundTransparency = 1; Scroll.ScrollBarThickness = IsMobile and 0 or 4; 
@@ -383,6 +392,7 @@ local function AddT(name, key, func)
         b.BackgroundColor3 = Config[key] and Color3.fromRGB(0, 120, 255) or Color3.fromRGB(30, 30, 30) 
         if key == "AimActive" and not Config[key] then Config.LockedTarget = nil end
         if key == "Noclip" and not Config[key] then RestoreCollision() end
+        if key == "Magnet" and not Config[key] then Config.MagnetTarget = nil end
         if key == "ESP" and not Config[key] then
             for _, v in pairs(Players:GetPlayers()) do
                 if v ~= lp then ClearESP(v.Character) end
@@ -392,7 +402,7 @@ local function AddT(name, key, func)
     end)
 end
 
--- ПОВЗУНКИ
+-- СИСТЕМА ПОВЗУНКІВ (ЗАХИСТ ВІД SHIFT LOCK)
 local function CreateSlider(Text, Min, Max, Default, ConfigKey) 
     local Container = Instance.new("Frame", Scroll); Container.Size = UDim2.new(0.95, 0, 0, 50); Container.BackgroundColor3 = Color3.fromRGB(25, 25, 25); Instance.new("UICorner", Container)
 
@@ -405,7 +415,6 @@ local function CreateSlider(Text, Min, Max, Default, ConfigKey)
     local Fill = Instance.new("Frame", SliderBG); Fill.Size = UDim2.new((Default - Min) / (Max - Min), 0, 1, 0); Fill.BackgroundColor3 = Color3.fromRGB(0, 120, 255); Instance.new("UICorner", Fill) 
     
     local dragging = false 
-    local dragInput
     
     local function Update(input) 
         local pos = math.clamp((input.Position.X - SliderBG.AbsolutePosition.X) / SliderBG.AbsoluteSize.X, 0, 1) 
@@ -418,19 +427,18 @@ local function CreateSlider(Text, Min, Max, Default, ConfigKey)
     SliderBG.InputBegan:Connect(function(input) 
         if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then 
             dragging = true
-            dragInput = input
             Update(input) 
         end 
     end) 
     
     UIS.InputChanged:Connect(function(input) 
-        if input == dragInput and dragging then 
+        if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then 
             Update(input) 
         end 
     end) 
     
     UIS.InputEnded:Connect(function(input) 
-        if input == dragInput then 
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then 
             dragging = false 
         end 
     end) 
@@ -441,6 +449,8 @@ RobBtn.MouseButton1Click:Connect(function() task.spawn(StartRobbery) end)
 
 AddT("AIM LOCK (G)", "AimActive")
 AddT("PLAYER ESP", "ESP")
+AddT("MAGNET", "Magnet")
+AddT("AUTO SAFE (LOW HP)", "AutoSafe")
 AddT("AUTO FARM", "Farm")
 AddT("FLY (F)", "Fly")
 CreateSlider("FLY SPEED", 10, 250, Config.FlySpeedValue, "FlySpeedValue")
@@ -480,7 +490,7 @@ UIS.InputBegan:Connect(function(i, c)
     end
 end)
 
--- == [ DRAGGABLE M BUTTON ] ==
+-- == [ DRAGGABLE M BUTTON ТА ОБРОБКА КЛІКІВ ] ==
 local MButtonSize = IsMobile and 45 or 40
 local M = Instance.new("TextButton", SG); 
 M.Size = UDim2.new(0, MButtonSize, 0, MButtonSize); 
@@ -490,28 +500,37 @@ M.Font = Enum.Font.SourceSansBold;
 M.TextSize = IsMobile and 24 or 20;
 M.BackgroundColor3 = Color3.fromRGB(20, 20, 20); 
 M.TextColor3 = Color3.new(1, 1, 1); 
-M.Active = true
 Instance.new("UICorner", M)
 
--- Робимо кнопку "М" перетягуваною
-MakeDraggable(M, M)
+local draggingM = false
+local dragStartM = nil
+local startPosM = nil
+local clickStartTick = 0
 
--- Обробка кліку на "М" (якщо це не було довге перетягування)
-local startTick = 0
-local startPosCheck = nil
 M.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-        startTick = tick()
-        startPosCheck = input.Position
+        draggingM = true
+        dragStartM = input.Position
+        startPosM = M.Position
+        clickStartTick = tick()
     end
 end)
 
-M.InputEnded:Connect(function(input)
+UIS.InputChanged:Connect(function(input)
+    if draggingM and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+        local delta = input.Position - dragStartM
+        M.Position = UDim2.new(startPosM.X.Scale, startPosM.X.Offset + delta.X, startPosM.Y.Scale, startPosM.Y.Offset + delta.Y)
+    end
+end)
+
+UIS.InputEnded:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-        local delta = (input.Position - startPosCheck).Magnitude
-        -- Відкриваємо/закриваємо меню, тільки якщо користувач не перетягував кнопку (клік тривав менше 0.3 сек і рух був мінімальним)
-        if tick() - startTick < 0.3 and delta < 10 then
-            Main.Visible = not Main.Visible 
+        if draggingM then
+            draggingM = false
+            local delta = (input.Position - dragStartM).Magnitude
+            if tick() - clickStartTick < 0.3 and delta < 10 then
+                Main.Visible = not Main.Visible 
+            end
         end
     end
 end)
