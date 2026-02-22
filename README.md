@@ -72,8 +72,8 @@ local Config = {
         "ninjastars", "shurikens", "tomahawk", "heavyvest",
         "militaryvest", "helmet", "mask", "backpack", "flashlight",
         "radio", "moneybag", "atmcards", "coffee", "moneyprinter",
-        "cloverballoon", "moneyballoon", "heartballoon",
-        "luckyblockcrate", "sabercrate"
+        "cloverballoon", "moneyballoon", "heartballoon", "weapon part",
+        "luckyblockcrate", "sabercrate", "electronics", "weapon parts",
     },
     
     -- ЧОРНИЙ СПИСОК
