@@ -4,6 +4,7 @@ local lp = Players.LocalPlayer
 local RS = game:GetService("RunService")
 local Light = game:GetService("Lighting")
 local UIS = game:GetService("UserInputService")
+local VirtualUser = game:GetService("VirtualUser")
 local Camera = workspace.CurrentCamera
 local StarterGui = game:GetService("StarterGui")
 
@@ -20,7 +21,7 @@ if lp.PlayerGui:FindFirstChild("MarkiyanPro") then lp.PlayerGui.MarkiyanPro:Dest
 local Config = {
     Farm = false, Speed = false, Bright = false, Armor = false, Heal = false,
     AimActive = false, LockedTarget = nil, 
-    FPSBoost = false, AntiSeat = false,
+    FPSBoost = false, AntiSeat = false, AntiAFK = false,
     Fly = false, FlySpeedValue = 50, WalkSpeedValue = 65,
     ESP = false, NoSpread = false, InfJump = false, Noclip = false,
     Magnet = false, MagnetTarget = nil,
@@ -56,7 +57,7 @@ task.spawn(function()
     end)
 end)
 
--- == [ СИСТЕМИ (FPS, HEAL, ARMOR) ] ==
+-- == [ СИСТЕМИ (FPS, HEAL, ARMOR, ANTI-AFK) ] ==
 local function ApplyFPS()
     settings().Rendering.QualityLevel = 1
     Light.GlobalShadows = false
@@ -77,6 +78,14 @@ task.spawn(function()
             local arm = lp.Backpack:FindFirstChild("Armor") or lp.Character:FindFirstChild("Armor")
             if arm then arm:Activate() end
         end
+    end
+end)
+
+-- == [ ANTI-AFK ЛОГІКА ] ==
+lp.Idled:Connect(function()
+    if Config.AntiAFK then
+        VirtualUser:CaptureController()
+        VirtualUser:ClickButton2(Vector2.new())
     end
 end)
 
@@ -460,6 +469,7 @@ CreateSlider("WALK SPEED", 16, 150, Config.WalkSpeedValue, "WalkSpeedValue")
 AddT("AUTO HEAL", "Heal")
 AddT("AUTO ARMOR", "Armor")
 AddT("ANTI-SEAT", "AntiSeat")
+AddT("ANTI-AFK", "AntiAFK")
 AddT("FPS BOOST", "FPSBoost", ApplyFPS)
 AddT("INF JUMP", "InfJump")
 
