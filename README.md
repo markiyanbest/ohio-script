@@ -42,7 +42,7 @@ local Config = {
         "trash", "newspaper", "bottle", "leaf", "stick", "shoe", "apple", "soda", "burger", "hotdog", "stop", "ore", "ladder", "fireworks", "press", "paintball", "spawn", "bloxiade", "cola", "spin",
         "requires", "door", "gate", "barrier", "cell", "unlock after", "cash earned", "garage", "ammo", "pickaxe", "sign", "equip", "put", "on", "food", "gloves", "spray", "ignite", "steal",
         "brew", "latte", "espresso", "drink", "vending machine", "cola", "bloxy", "bat", "katana", "flashbang", "skateboard", "bike", "off", "turn", "ninja", "workbench", "edit",
-        "open", "fill", "drain", "close"
+        "open", "fill", "drain", "close", "guitar",
     }
 }
 
