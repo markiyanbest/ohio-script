@@ -145,8 +145,8 @@ for _, v in pairs({
     "burger","hotdog","stop","ore","ladder","fireworks","press","paintball",
     "spawn","cola","spin","requires","door","gate","barrier","cell",
     "cash earned","garage","ammo","pickaxe","sign","equip","food","gloves",
-    "spray","ignite","steal","brew","latte","espresso","drink",
-    "vending machine","bloxy","bat","katana","flashbang","skateboard",
+    "spray","ignite","steal","brew","latte","espresso","drink", "snowball",
+    "vending machine","bloxy","bat","katana","flashbang","skateboard", "turn on",
     "bike","ninja","workbench","edit","open","fill","drain","close","guitar",
 }) do BlacklistCache[v] = true end
 
