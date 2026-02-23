@@ -11,28 +11,17 @@ local Camera       = workspace.CurrentCamera
 local StarterGui   = game:GetService("StarterGui")
 local TweenService = game:GetService("TweenService")
 
--- ============================================================
--- [[ ПЛАТФОРМА ]]
--- ============================================================
 local IsMobile = UIS.TouchEnabled
 local IsPC     = not IsMobile
 
--- ============================================================
--- [[ ОЧИЩЕННЯ ]]
--- ============================================================
 pcall(function()
     for _, sg in pairs({ game:GetService("CoreGui"), lp:WaitForChild("PlayerGui") }) do
         for _, v in pairs(sg:GetChildren()) do
-            if v:IsA("ScreenGui") and v.Name == "MarkiyanPro" then
-                v:Destroy()
-            end
+            if v:IsA("ScreenGui") and v.Name == "MarkiyanPro" then v:Destroy() end
         end
     end
 end)
 
--- ============================================================
--- [[ МОБІЛЬНА АВТО-ОПТИМІЗАЦІЯ ]]
--- ============================================================
 if IsMobile then
     pcall(function()
         settings().Rendering.QualityLevel = 1
@@ -64,9 +53,6 @@ if IsMobile then
     end)
 end
 
--- ============================================================
--- [[ КООРДИНАТИ ]]
--- ============================================================
 local COORDS = {
     GUN_SHOP   = Vector3.new(1131, 25, -1344),
     BANK_ENT   = Vector3.new(1106, 8,  -336),
@@ -75,7 +61,7 @@ local COORDS = {
 }
 
 -- ============================================================
--- [[ КОНФІГ ]]
+-- CONFIG
 -- ============================================================
 local Config = {
     Farm           = false,
@@ -98,6 +84,10 @@ local Config = {
     AutoSafe       = false,
     SafeHealth     = 35,
     SilentAim      = false,
+    -- AIM CONFIG
+    AimFOV         = 200,
+    AimSmooth      = 0.18,
+    AimPart        = "Head",
 }
 
 local Binds = {
@@ -119,11 +109,10 @@ local BindNames = {
 local waitingForBind = nil
 
 -- ============================================================
--- [[ ЛУТ ]]
+-- ЛOOT
 -- ============================================================
 local LootCache      = {}
 local BlacklistCache = {}
-
 for _, v in pairs({
     "void","gem","shard","suitcase nuke","nuke","nextbot","ninja star",
     "stop sign","printer","money printer","materials","candy","gold ak",
@@ -139,25 +128,22 @@ for _, v in pairs({
     "asval","rpk","dragunov","m249","mp7","fnfal","p90","scarl","awp",
     "m1garand","barrettm107","cannonrpg","minigun",
 }) do LootCache[v] = true end
-
 for _, v in pairs({
     "trash","newspaper","bottle","leaf","stick","shoe","apple","soda",
     "burger","hotdog","stop","ore","ladder","fireworks","press","paintball",
     "spawn","cola","spin","requires","door","gate","barrier","cell",
     "cash earned","garage","ammo","pickaxe","sign","equip","food","gloves",
-    "spray","ignite","steal","brew","latte","espresso","drink", "snowball",
-    "vending machine","bloxy","bat","katana","flashbang","skateboard", "turn on",
+    "spray","ignite","steal","brew","latte","espresso","drink","snowball",
+    "vending machine","bloxy","bat","katana","flashbang","skateboard","turn on",
     "bike","ninja","workbench","edit","open","fill","drain","close","guitar",
 }) do BlacklistCache[v] = true end
 
 -- ============================================================
--- [[ УТИЛІТИ ]]
+-- УТИЛІТИ
 -- ============================================================
 local function Notify(title, text, dur)
     pcall(function()
-        StarterGui:SetCore("SendNotification", {
-            Title = title, Text = text, Duration = dur or 2
-        })
+        StarterGui:SetCore("SendNotification", {Title=title, Text=text, Duration=dur or 2})
     end)
 end
 
@@ -166,26 +152,136 @@ local function GetHum()   local c = GetChar(); return c and c:FindFirstChildOfCl
 local function GetRoot()  local c = GetChar(); return c and c:FindFirstChild("HumanoidRootPart") end
 
 local function IsHumAlive()
-    local h = GetHum()
-    return h and h.Health > 0
+    local h = GetHum(); return h and h.Health > 0
 end
 
 local function SafeTeleport(pos)
     if not IsHumAlive() then return false end
-    local root = GetRoot()
-    if not root then return false end
-    pcall(function()
-        lp.Character:PivotTo(CFrame.new(pos + Vector3.new(0, 3, 0)))
-    end)
+    local root = GetRoot(); if not root then return false end
+    pcall(function() lp.Character:PivotTo(CFrame.new(pos + Vector3.new(0,3,0))) end)
     return true
 end
 
 local function IsTargetAlive(target)
     if not target or not target.Parent then return false end
-    local char = target.Character
-    if not char then return false end
+    local char = target.Character; if not char then return false end
     local h = char:FindFirstChildOfClass("Humanoid")
     return h and h.Health > 0
+end
+
+-- ============================================================
+-- AIM HELPERS (як в OMNI)
+-- ============================================================
+local aimRay = RaycastParams.new()
+aimRay.FilterType = Enum.RaycastFilterType.Exclude
+
+local function FindAimPart(char)
+    if not char then return nil end
+    local name = Config.AimPart or "Head"
+    local p = char:FindFirstChild(name)
+    if p and p:IsA("BasePart") then return p end
+    p = char:FindFirstChild("Head") or char:FindFirstChild("HumanoidRootPart")
+    if p and p:IsA("BasePart") then return p end
+    for _, v in pairs(char:GetDescendants()) do
+        if v:IsA("BasePart") and v.Name == name then return v end
+    end
+    return nil
+end
+
+local function IsVisible(char)
+    if not char then return false end
+    local myChar = lp.Character; if not myChar then return false end
+    local part = FindAimPart(char); if not part then return false end
+    local origin = Camera.CFrame.Position
+    local target = part.Position
+    local dir    = target - origin
+    local dist   = dir.Magnitude
+    if dist < 1 then return true end
+    aimRay.FilterDescendantsInstances = {myChar, Camera}
+    local result = workspace:Raycast(origin, dir.Unit * (dist - 0.5), aimRay)
+    if not result then return true end
+    if result.Instance:IsDescendantOf(char) then return true end
+    if result.Instance.Transparency >= 0.8 then return true end
+    return false
+end
+
+local function ScreenDist(part)
+    if not part then return math.huge end
+    local pos, on = Camera:WorldToViewportPoint(part.Position)
+    if not on then return math.huge end
+    local center = Vector2.new(Camera.ViewportSize.X/2, Camera.ViewportSize.Y/2)
+    return (Vector2.new(pos.X, pos.Y) - center).Magnitude
+end
+
+-- AIM TARGET SYSTEM (як в OMNI)
+local aimTarget     = nil
+local aimLocked     = false
+local aimLastSwitch = 0
+local aimSwitchCD   = 0.35
+local aimLostFrames = 0
+local lastPing      = 0
+local pingTk        = 0
+
+local function FindNewAimTarget()
+    local fov  = Config.AimFOV
+    local best, bestDist = nil, math.huge
+    for _, p in pairs(Players:GetPlayers()) do
+        if p == lp then continue end
+        local char = p.Character
+        if not char then continue end
+        local h = char:FindFirstChildOfClass("Humanoid")
+        if not h or h.Health <= 0 then continue end
+        local part = FindAimPart(char)
+        if not part then continue end
+        local sd = ScreenDist(part)
+        if sd > fov then continue end
+        if not IsVisible(char) then continue end
+        if sd < bestDist then bestDist = sd; best = p end
+    end
+    return best
+end
+
+local function GetBestAimTarget()
+    local now = tick()
+    local fov = Config.AimFOV
+
+    if aimTarget and aimLocked then
+        local char = aimTarget.Character
+        if char then
+            local h = char:FindFirstChildOfClass("Humanoid")
+            if h and h.Health > 0 then
+                local part = FindAimPart(char)
+                if part then
+                    local sd  = ScreenDist(part)
+                    local vis = IsVisible(char)
+                    if sd <= fov * 1.8 and vis then
+                        aimLostFrames = 0
+                        return char
+                    end
+                    if not vis then
+                        aimLostFrames += 1
+                        if aimLostFrames < 15 then return char end
+                    elseif sd > fov * 1.8 then
+                        aimLostFrames += 1
+                        if aimLostFrames < 8 then return char end
+                    end
+                end
+            end
+        end
+        aimTarget = nil; aimLocked = false; aimLostFrames = 0
+    end
+
+    if now - aimLastSwitch < aimSwitchCD then return nil end
+
+    local best = FindNewAimTarget()
+    if best then
+        aimTarget     = best
+        aimLocked     = true
+        aimLostFrames = 0
+        aimLastSwitch = now
+        return best.Character
+    end
+    return nil
 end
 
 local function GetClosestToScreen()
@@ -194,8 +290,7 @@ local function GetClosestToScreen()
     local cy = Camera.ViewportSize.Y / 2
     for _, v in pairs(Players:GetPlayers()) do
         if v == lp then continue end
-        local char = v.Character
-        if not char then continue end
+        local char = v.Character; if not char then continue end
         local head = char:FindFirstChild("Head")
         local hum  = char:FindFirstChildOfClass("Humanoid")
         if not head or not hum or hum.Health <= 0 then continue end
@@ -208,8 +303,7 @@ local function GetClosestToScreen()
 end
 
 local function GetClosestByDist()
-    local root = GetRoot()
-    if not root then return nil end
+    local root = GetRoot(); if not root then return nil end
     local best, bestD = nil, math.huge
     for _, v in pairs(Players:GetPlayers()) do
         if v == lp then continue end
@@ -224,21 +318,22 @@ local function GetClosestByDist()
 end
 
 -- ============================================================
--- [[ МОБІЛЬНІ КОНТРОЛЕРИ ]]
+-- МОБІЛЬНІ КОНТРОЛЕРИ
 -- ============================================================
 local Controls = nil
 task.spawn(function()
     if not game:IsLoaded() then game.Loaded:Wait() end
     task.wait(1)
     pcall(function()
-        Controls = require(
-            lp.PlayerScripts:WaitForChild("PlayerModule", 5)
-        ):GetControls()
+        Controls = require(lp.PlayerScripts:WaitForChild("PlayerModule", 5)):GetControls()
     end)
 end)
 
+-- FLY MOBILE BUTTONS
+local MobUp, MobDn = false, false
+
 -- ============================================================
--- [[ SILENT AIM ]]
+-- SILENT AIM
 -- ============================================================
 local silentActive  = false
 local hookInstalled = false
@@ -255,17 +350,15 @@ pcall(function()
           or method == "FindPartOnRay"
           or method == "FindPartOnRayWithIgnoreList") then
             local args   = { ... }
-            local target = GetClosestToScreen()
-            if target and target.Character then
-                local head = target.Character:FindFirstChild("Head")
-                if head then
-                    local origin = Camera.CFrame.Position
-                    if typeof(args[2]) == "Vector3" then
-                        args[2] = (head.Position - origin).Unit * args[2].Magnitude
-                    elseif typeof(args[1]) == "Ray" then
-                        args[1] = Ray.new(origin,
-                            (head.Position - origin).Unit * args[1].Direction.Magnitude)
-                    end
+            local tgtChar = GetBestAimTarget()
+            local head = tgtChar and FindAimPart(tgtChar)
+            if head then
+                local origin = Camera.CFrame.Position
+                if typeof(args[2]) == "Vector3" then
+                    args[2] = (head.Position - origin).Unit * args[2].Magnitude
+                elseif typeof(args[1]) == "Ray" then
+                    args[1] = Ray.new(origin,
+                        (head.Position - origin).Unit * args[1].Direction.Magnitude)
                 end
             end
             return oldNC(self, table.unpack(args))
@@ -283,9 +376,9 @@ local function FallbackSilentAim()
     if now - lastSilentT < (IsMobile and 0.06 or 0.02) then return end
     lastSilentT = now
     if not UIS:IsMouseButtonPressed(Enum.UserInputType.MouseButton1) then return end
-    local target = GetClosestToScreen()
-    if not target or not target.Character then return end
-    local head = target.Character:FindFirstChild("Head")
+    local tgtChar = GetBestAimTarget()
+    if not tgtChar then return end
+    local head = FindAimPart(tgtChar)
     if not head then return end
     Camera.CFrame = Camera.CFrame:Lerp(
         CFrame.new(Camera.CFrame.Position, head.Position),
@@ -294,7 +387,7 @@ local function FallbackSilentAim()
 end
 
 -- ============================================================
--- [[ FPS BOOST ]]
+-- FPS BOOST
 -- ============================================================
 local function ApplyFPS()
     pcall(function()
@@ -318,7 +411,7 @@ local function ApplyFPS()
 end
 
 -- ============================================================
--- [[ AUTO HEAL / ARMOR ]]
+-- AUTO HEAL / ARMOR
 -- ============================================================
 task.spawn(function()
     while task.wait(IsMobile and 1.2 or 0.6) do
@@ -347,10 +440,7 @@ task.spawn(function()
                     end
                 end
                 if med then
-                    if med.Parent == lp.Backpack then
-                        hum:EquipTool(med)
-                        task.wait(0.15)
-                    end
+                    if med.Parent == lp.Backpack then hum:EquipTool(med); task.wait(0.15) end
                     local tool = char:FindFirstChild(med.Name)
                     if tool then
                         pcall(function() tool:Activate() end)
@@ -387,18 +477,13 @@ task.spawn(function()
                     end
                 end
                 if arm then
-                    if arm.Parent == lp.Backpack then
-                        hum:EquipTool(arm)
-                        task.wait(0.15)
-                    end
+                    if arm.Parent == lp.Backpack then hum:EquipTool(arm); task.wait(0.15) end
                     local tool = char:FindFirstChild(arm.Name)
                     if tool then
                         pcall(function() tool:Activate() end)
                         pcall(function()
                             for _, v in pairs(tool:GetDescendants()) do
-                                if v:IsA("RemoteEvent") then
-                                    v:FireServer()
-                                end
+                                if v:IsA("RemoteEvent") then v:FireServer() end
                             end
                         end)
                     end
@@ -411,7 +496,7 @@ task.spawn(function()
 end)
 
 -- ============================================================
--- [[ ANTI-AFK ]]
+-- ANTI-AFK
 -- ============================================================
 lp.Idled:Connect(function()
     if Config.AntiAFK then
@@ -419,7 +504,6 @@ lp.Idled:Connect(function()
         VirtualUser:ClickButton2(Vector2.new())
     end
 end)
-
 task.spawn(function()
     while task.wait(55) do
         if Config.AntiAFK then
@@ -430,21 +514,18 @@ task.spawn(function()
 end)
 
 -- ============================================================
--- [[ AUTO ROB ]]
+-- AUTO ROB
 -- ============================================================
 local function StartRobbery()
     Notify("BANK ROB", "Починаємо...", 2)
-    if not SafeTeleport(COORDS.BANK_MONEY) then
-        Notify("BANK ROB", "Помилка!", 2); return
-    end
+    if not SafeTeleport(COORDS.BANK_MONEY) then Notify("BANK ROB","Помилка!",2); return end
     task.wait(0.8)
     for i = 1, 20 do
         if not IsHumAlive() then break end
         pcall(function()
             for _, v in pairs(workspace:GetDescendants()) do
                 if not v:IsA("ProximityPrompt") or not v.Enabled then continue end
-                local root = GetRoot()
-                if not root then continue end
+                local root = GetRoot(); if not root then continue end
                 if (root.Position - v.Parent:GetPivot().Position).Magnitude < 15 then
                     fireproximityprompt(v)
                 end
@@ -457,19 +538,15 @@ local function StartRobbery()
 end
 
 -- ============================================================
--- [[ ESP ]]
+-- ESP
 -- ============================================================
 local ESPCache = {}
 
 local function ClearESP(char)
     if not char then return end
     local head = char:FindFirstChild("Head")
-    if head then
-        local g = head:FindFirstChild("MrkESP")
-        if g then g:Destroy() end
-    end
-    local hl = char:FindFirstChild("MrkHL")
-    if hl then hl:Destroy() end
+    if head then local g = head:FindFirstChild("MrkESP"); if g then g:Destroy() end end
+    local hl = char:FindFirstChild("MrkHL"); if hl then hl:Destroy() end
 end
 
 local function ClearAllESP()
@@ -528,20 +605,18 @@ task.spawn(function()
                     hl.OutlineTransparency = 0
                     hl.Parent = char
                 end
-                ESPCache[v] = { gui = gui, lbl = lbl }
+                ESPCache[v] = {gui=gui, lbl=lbl}
                 cache = ESPCache[v]
             end
-            local lbl   = cache.lbl
+            local lbl2  = cache.lbl
             local dist  = myRoot and math.floor((myRoot.Position - head.Position).Magnitude) or 0
             local hp    = math.floor(hum.Health)
             local maxHp = math.max(math.floor(hum.MaxHealth), 1)
             local ratio = hp / maxHp
-            lbl.Text = string.format("[%s]\nHP: %d/%d | %dm", v.Name, hp, maxHp, dist)
-            lbl.TextColor3 = ratio >= 0.6
-                and Color3.fromRGB(0, 255, 100)
-                or ratio >= 0.3
-                and Color3.fromRGB(255, 220, 0)
-                or Color3.fromRGB(255, 60, 60)
+            lbl2.Text = string.format("[%s]\nHP: %d/%d | %dm", v.Name, hp, maxHp, dist)
+            lbl2.TextColor3 = ratio >= 0.6 and Color3.fromRGB(0,255,100)
+                or ratio >= 0.3 and Color3.fromRGB(255,220,0)
+                or Color3.fromRGB(255,60,60)
         end
     end
 end)
@@ -551,36 +626,25 @@ Players.PlayerRemoving:Connect(function(p)
 end)
 
 -- ============================================================
--- [[ RENDER: AIM + SILENT AIM ]]
+-- NOCLIP
 -- ============================================================
-local lastAimT = 0
-RS.RenderStepped:Connect(function()
-    if Config.SilentAim and not hookInstalled then FallbackSilentAim() end
-    if not Config.AimActive then
-        Config.LockedTarget = nil; return
+local function RestoreCollision()
+    local char = GetChar(); if not char then return end
+    for _, v in pairs(char:GetDescendants()) do
+        if v:IsA("BasePart") then v.CanCollide = true end
     end
-    local now = tick()
-    if now - lastAimT < (IsMobile and 0.05 or 0.01) then return end
-    lastAimT = now
-    if not IsTargetAlive(Config.LockedTarget) then
-        Config.LockedTarget = GetClosestToScreen()
-    end
-    if Config.LockedTarget then
-        local char = Config.LockedTarget.Character
-        local head = char and char:FindFirstChild("Head")
-        if head then
-            if IsMobile then
-                Camera.CFrame = Camera.CFrame:Lerp(
-                    CFrame.new(Camera.CFrame.Position, head.Position), 0.3)
-            else
-                Camera.CFrame = CFrame.lookAt(Camera.CFrame.Position, head.Position)
-            end
-        end
+end
+
+RS.Stepped:Connect(function()
+    if not Config.Noclip then return end
+    local char = GetChar(); if not char then return end
+    for _, v in pairs(char:GetDescendants()) do
+        if v:IsA("BasePart") then v.CanCollide = false end
     end
 end)
 
 -- ============================================================
--- [[ AUTO FARM ]]
+-- AUTO FARM
 -- ============================================================
 local farmRunning = false
 task.spawn(function()
@@ -615,82 +679,102 @@ task.spawn(function()
 end)
 
 -- ============================================================
--- [[ NOCLIP ]]
+-- RENDER STEPPED — AIM + SILENT + FLY (як в OMNI)
 -- ============================================================
-local function RestoreCollision()
-    local char = GetChar()
-    if not char then return end
-    for _, v in pairs(char:GetDescendants()) do
-        if v:IsA("BasePart") then v.CanCollide = true end
+RS.RenderStepped:Connect(function(dt)
+    -- PING
+    local now = tick()
+    if now - pingTk > 2 then
+        pingTk = now
+        pcall(function() lastPing = lp:GetNetworkPing() end)
     end
-end
 
-RS.Stepped:Connect(function()
-    if not Config.Noclip then return end
-    local char = GetChar()
-    if not char then return end
-    for _, v in pairs(char:GetDescendants()) do
-        if v:IsA("BasePart") then v.CanCollide = false end
+    -- SILENT AIM fallback
+    if Config.SilentAim and not hookInstalled then FallbackSilentAim() end
+
+    -- AUTO AIM (OMNI стиль)
+    if Config.AimActive then
+        local target = GetBestAimTarget()
+        local part   = target and FindAimPart(target)
+        if part then
+            local predTime     = math.clamp(lastPing, 0.01, 0.25)
+            local vel          = part.AssemblyLinearVelocity
+            local dist         = (Camera.CFrame.Position - part.Position).Magnitude
+            local predMul      = math.clamp(dist / 100, 0.3, 1.5)
+            local predictedPos = part.Position + vel * predTime * predMul
+            if vel.Y < -5 then
+                predictedPos += Vector3.new(0, -4.9 * predTime * predTime, 0)
+            end
+            local smooth = Config.AimSmooth
+            local sd = ScreenDist(part)
+            if sd < 30 then smooth = smooth * 0.3
+            elseif sd < 80 then smooth = smooth * 0.6 end
+            local targetCF = CFrame.new(Camera.CFrame.Position, predictedPos)
+            Camera.CFrame  = Camera.CFrame:Lerp(targetCF, smooth)
+        end
+    else
+        if not Config.AimActive then
+            aimTarget = nil; aimLocked = false; aimLostFrames = 0
+        end
+    end
+
+    -- FLY (OMNI стиль — через CFrame)
+    if Config.Fly and IsHumAlive() then
+        local root = GetRoot()
+        local hum  = GetHum()
+        if root and hum then
+            hum.PlatformStand = false
+            local moveX, moveZ = 0, 0
+            if IsMobile and Controls then
+                local mv = Controls:GetMoveVector()
+                moveX = mv.X; moveZ = mv.Z
+            elseif IsPC then
+                if UIS:IsKeyDown(Enum.KeyCode.W) then moveZ = -1 end
+                if UIS:IsKeyDown(Enum.KeyCode.S) then moveZ =  1 end
+                if UIS:IsKeyDown(Enum.KeyCode.A) then moveX = -1 end
+                if UIS:IsKeyDown(Enum.KeyCode.D) then moveX =  1 end
+            end
+            local camCF = Camera.CFrame
+            local dir   = camCF.LookVector * -moveZ + camCF.RightVector * moveX
+            local upD   = 0
+            if UIS:IsKeyDown(Enum.KeyCode.Space)       or MobUp then upD =  1 end
+            if UIS:IsKeyDown(Enum.KeyCode.LeftControl) or MobDn then upD = -1 end
+            dir = dir + Vector3.new(0, upD, 0)
+            if dir.Magnitude > 1 then dir = dir.Unit end
+            root.CFrame += dir * Config.FlySpeedValue * dt
+            root.AssemblyLinearVelocity = Vector3.zero
+            root.AssemblyAngularVelocity = Vector3.zero
+            if root.Position.Y > 2000 then root.CFrame -= Vector3.new(0,2,0) end
+        end
     end
 end)
 
 -- ============================================================
--- [[ HEARTBEAT ]]
+-- HEARTBEAT
 -- ============================================================
-RS.Heartbeat:Connect(function()
+RS.Heartbeat:Connect(function(dt)
     local hum  = GetHum()
     local root = GetRoot()
     if not hum or not root then return end
 
-    if Config.AntiSeat and hum.SeatPart then
-        hum.Sit = false
-    end
+    if Config.AntiSeat and hum.SeatPart then hum.Sit = false end
 
+    -- SPEED (тільки якщо не летимо)
     if Config.Speed and not Config.Fly and IsHumAlive() then
         hum.WalkSpeed = Config.WalkSpeedValue
     elseif not Config.Fly and not Config.Speed then
         if hum.WalkSpeed ~= 16 then hum.WalkSpeed = 16 end
     end
 
-    if Config.Fly and IsHumAlive() then
-        local moveX, moveZ = 0, 0
-        if IsMobile and Controls then
-            local mv = Controls:GetMoveVector()
-            moveX = mv.X; moveZ = mv.Z
-        elseif IsPC then
-            if UIS:IsKeyDown(Enum.KeyCode.W) then moveZ = -1 end
-            if UIS:IsKeyDown(Enum.KeyCode.S) then moveZ =  1 end
-            if UIS:IsKeyDown(Enum.KeyCode.A) then moveX = -1 end
-            if UIS:IsKeyDown(Enum.KeyCode.D) then moveX =  1 end
-        end
-
-        local dir = Camera.CFrame.LookVector  * -moveZ
-                  + Camera.CFrame.RightVector *  moveX
-
-        if IsPC then
-            if UIS:IsKeyDown(Enum.KeyCode.Space)       then dir += Vector3.new(0,1,0) end
-            if UIS:IsKeyDown(Enum.KeyCode.LeftControl) then dir -= Vector3.new(0,1,0) end
-        end
-
-        if dir.Magnitude > 1 then dir = dir.Unit end
-
-        local bv = root:FindFirstChild("MrkFlyBV")
-        if not bv then
-            bv          = Instance.new("BodyVelocity")
-            bv.Name     = "MrkFlyBV"
-            bv.MaxForce = Vector3.new(1e5, 1e5, 1e5)
-            bv.Parent   = root
-        end
-        bv.Velocity       = dir * Config.FlySpeedValue
-        hum.PlatformStand = false
-        hum.WalkSpeed     = 0
-    else
+    -- FLY cleanup якщо вимкнено
+    if not Config.Fly then
         local bv = root:FindFirstChild("MrkFlyBV")
         if bv then bv:Destroy() end
         if hum.PlatformStand then hum.PlatformStand = false end
-        if not Config.Speed   then hum.WalkSpeed     = 16   end
+        if not Config.Speed then hum.WalkSpeed = 16 end
     end
 
+    -- MAGNET
     if Config.Magnet then
         if not IsTargetAlive(Config.MagnetTarget) then
             Config.MagnetTarget = GetClosestByDist()
@@ -700,7 +784,7 @@ RS.Heartbeat:Connect(function()
                 and Config.MagnetTarget.Character:FindFirstChild("HumanoidRootPart")
             if tHRP then
                 root.CFrame = root.CFrame:Lerp(
-                    tHRP.CFrame * CFrame.new(0, 0, 3),
+                    tHRP.CFrame * CFrame.new(0,0,3),
                     IsMobile and 0.18 or 0.25
                 )
                 root.AssemblyLinearVelocity = tHRP.AssemblyLinearVelocity
@@ -710,16 +794,17 @@ RS.Heartbeat:Connect(function()
         Config.MagnetTarget = nil
     end
 
+    -- AUTO SAFE
     if Config.AutoSafe and IsHumAlive() and hum.Health <= Config.SafeHealth then
         if (root.Position - COORDS.SAFE_ZONE).Magnitude > 20 then
             SafeTeleport(COORDS.SAFE_ZONE)
-            Notify("AUTO SAFE", "HP: "..math.floor(hum.Health), 3)
+            Notify("AUTO SAFE","HP: "..math.floor(hum.Health),3)
         end
     end
 end)
 
 -- ============================================================
--- [[ INFINITE JUMP ]]
+-- INFINITE JUMP
 -- ============================================================
 UIS.JumpRequest:Connect(function()
     if not Config.InfJump then return end
@@ -728,43 +813,36 @@ UIS.JumpRequest:Connect(function()
 end)
 
 -- ============================================================
--- [[ CLEANUP ]]
+-- CLEANUP
 -- ============================================================
 lp.CharacterRemoving:Connect(function()
     Config.Fly    = false
     Config.Noclip = false
-    local root = GetRoot()
-    if root then
-        local bv = root:FindFirstChild("MrkFlyBV")
-        if bv then bv:Destroy() end
-    end
+    aimTarget = nil; aimLocked = false; aimLostFrames = 0
 end)
 
 lp.CharacterAdded:Connect(function(char)
     Config.Fly    = false
     Config.Noclip = false
     Config.Magnet = false
+    aimTarget = nil; aimLocked = false; aimLostFrames = 0
     task.wait(1)
     local hum = char:FindFirstChildOfClass("Humanoid")
-    if hum then
-        hum.PlatformStand = false
-        hum.WalkSpeed     = 16
-    end
+    if hum then hum.PlatformStand = false; hum.WalkSpeed = 16 end
 end)
 
 -- ============================================================
--- [[ GUI ]]
+-- GUI
 -- ============================================================
 local SG = Instance.new("ScreenGui")
 SG.Name           = "MarkiyanPro"
 SG.ResetOnSpawn   = false
 SG.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-
 pcall(function() SG.Parent = game:GetService("CoreGui") end)
 if not SG.Parent then SG.Parent = lp:WaitForChild("PlayerGui") end
 
-local MW = IsMobile and 250 or 370
-local MH = IsMobile and 440 or 590
+local MW = IsMobile and 250 or 390
+local MH = IsMobile and 480 or 630
 
 local Main = Instance.new("Frame", SG)
 Main.Size             = UDim2.new(0, MW, 0, MH)
@@ -799,8 +877,7 @@ HeaderLbl.BackgroundTransparency = 1
 HeaderLbl.TextColor3             = Color3.fromRGB(255, 255, 255)
 HeaderLbl.Font                   = Enum.Font.GothamBlack
 HeaderLbl.TextSize               = IsMobile and 13 or 15
-HeaderLbl.Text                   = "⚡ Markiyan PRO V47"
-    .. (IsMobile and " [MOB]" or "")
+HeaderLbl.Text                   = "⚡ Markiyan PRO V47" .. (IsMobile and " [MOB]" or "")
 HeaderLbl.ZIndex                 = 2
 
 local CloseBtn = Instance.new("TextButton", Header)
@@ -852,7 +929,133 @@ ListLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
 end)
 
 -- ============================================================
--- [[ TABS ]]
+-- FOV CIRCLE (як в OMNI)
+-- ============================================================
+local fovCircle = Instance.new("Frame", SG)
+fovCircle.Size                 = UDim2.new(0, Config.AimFOV*2, 0, Config.AimFOV*2)
+fovCircle.Position             = UDim2.new(0.5, -Config.AimFOV, 0.5, -Config.AimFOV)
+fovCircle.BackgroundTransparency = 1
+fovCircle.BorderSizePixel      = 0
+fovCircle.Visible              = false
+fovCircle.ZIndex               = 10
+Instance.new("UICorner", fovCircle).CornerRadius = UDim.new(1, 0)
+local fovStroke = Instance.new("UIStroke", fovCircle)
+fovStroke.Color       = Color3.fromRGB(0, 120, 255)
+fovStroke.Thickness   = 1.5
+fovStroke.Transparency = 0.3
+
+local tgtInfo = Instance.new("TextLabel", SG)
+tgtInfo.Size                   = UDim2.new(0, 200, 0, 22)
+tgtInfo.Position               = UDim2.new(0.5, -100, 0.5, -Config.AimFOV - 32)
+tgtInfo.BackgroundColor3       = Color3.fromRGB(10, 10, 16)
+tgtInfo.BackgroundTransparency = 0.2
+tgtInfo.BorderSizePixel        = 0
+tgtInfo.TextColor3             = Color3.fromRGB(0, 200, 100)
+tgtInfo.Font                   = Enum.Font.GothamBold
+tgtInfo.TextSize               = 11
+tgtInfo.Text                   = ""
+tgtInfo.Visible                = false
+tgtInfo.ZIndex                 = 12
+Instance.new("UICorner", tgtInfo).CornerRadius = UDim.new(0, 6)
+Instance.new("UIStroke", tgtInfo).Color        = Color3.fromRGB(40, 40, 58)
+
+local function UpdateFOVCircle()
+    local r = Config.AimFOV
+    fovCircle.Size     = UDim2.new(0, r*2, 0, r*2)
+    fovCircle.Position = UDim2.new(0.5, -r, 0.5, -r)
+    tgtInfo.Position   = UDim2.new(0.5, -100, 0.5, -r - 32)
+end
+
+-- Update FOV circle кожен кадр
+RS.RenderStepped:Connect(function()
+    fovCircle.Visible = Config.AimActive or Config.SilentAim
+    tgtInfo.Visible   = false
+
+    if Config.AimActive then
+        local target = aimTarget and aimTarget.Character
+        local part   = target and FindAimPart(target)
+        if part and aimLocked then
+            local plr  = Players:GetPlayerFromCharacter(target)
+            local dist = math.floor((Camera.CFrame.Position - part.Position).Magnitude)
+            tgtInfo.Text       = "🔒 " .. (plr and plr.Name or "?") .. " [" .. dist .. "m]"
+            tgtInfo.TextColor3 = Color3.fromRGB(0, 230, 120)
+            tgtInfo.Visible    = true
+            fovStroke.Color    = Color3.fromRGB(0, 200, 100)
+            fovStroke.Thickness = 2
+        else
+            tgtInfo.Text      = "No target"
+            tgtInfo.TextColor3 = Color3.fromRGB(120, 120, 145)
+            tgtInfo.Visible   = Config.AimActive
+            fovStroke.Color   = Color3.fromRGB(100, 100, 180)
+            fovStroke.Thickness = 1.5
+        end
+    end
+
+    if Config.SilentAim and not Config.AimActive then
+        local tgtChar = aimTarget and aimTarget.Character
+        local part    = tgtChar and FindAimPart(tgtChar)
+        if part then
+            local plr  = Players:GetPlayerFromCharacter(tgtChar)
+            local dist = math.floor((Camera.CFrame.Position - part.Position).Magnitude)
+            tgtInfo.Text       = "🔇 " .. (plr and plr.Name or "?") .. " [" .. dist .. "m]"
+            tgtInfo.TextColor3 = Color3.fromRGB(255, 200, 50)
+            tgtInfo.Visible    = true
+            fovStroke.Color    = Color3.fromRGB(255, 200, 50)
+        else
+            tgtInfo.Text      = "No target"
+            tgtInfo.TextColor3 = Color3.fromRGB(120, 120, 145)
+            tgtInfo.Visible   = true
+            fovStroke.Color   = Color3.fromRGB(100, 100, 180)
+        end
+    end
+end)
+
+-- ============================================================
+-- MOBILE FLY BUTTONS
+-- ============================================================
+local flyH = Instance.new("Frame", SG)
+flyH.Size                 = UDim2.new(0, 134, 0, 60)
+flyH.Position             = UDim2.new(1, -148, 1, -76)
+flyH.BackgroundTransparency = 1
+flyH.Visible              = false
+flyH.ZIndex               = 50
+
+local function MkFlyB(t, x, cb)
+    local b = Instance.new("TextButton", flyH)
+    b.Size             = UDim2.new(0, 60, 0, 56)
+    b.Position         = UDim2.new(0, x, 0, 0)
+    b.BackgroundColor3 = Color3.fromRGB(12, 12, 18)
+    b.Text             = t
+    b.TextColor3       = Color3.fromRGB(255,255,255)
+    b.Font             = Enum.Font.GothamBlack
+    b.TextSize         = 26
+    b.BorderSizePixel  = 0
+    b.ZIndex           = 51
+    b.AutoButtonColor  = false
+    Instance.new("UICorner", b).CornerRadius = UDim.new(0, 10)
+    Instance.new("UIStroke", b).Color        = Color3.fromRGB(40,40,58)
+    b.InputBegan:Connect(function(i)
+        if i.UserInputType == Enum.UserInputType.Touch
+        or i.UserInputType == Enum.UserInputType.MouseButton1 then
+            cb(true); b.BackgroundColor3 = Color3.fromRGB(32,32,48)
+        end
+    end)
+    b.InputEnded:Connect(function(i)
+        if i.UserInputType == Enum.UserInputType.Touch
+        or i.UserInputType == Enum.UserInputType.MouseButton1 then
+            cb(false); b.BackgroundColor3 = Color3.fromRGB(12,12,18)
+        end
+    end)
+end
+MkFlyB("▲", 0,  function(v) MobUp = v end)
+MkFlyB("▼", 70, function(v) MobDn = v end)
+
+local function UpdFlyBtns()
+    flyH.Visible = Config.Fly and IsMobile
+end
+
+-- ============================================================
+-- TABS
 -- ============================================================
 local Sections   = {}
 local TabButtons = {}
@@ -861,9 +1064,7 @@ local ActiveTab  = nil
 local function ShowTab(name)
     ActiveTab = name
     for n, frames in pairs(Sections) do
-        for _, f in pairs(frames) do
-            f.Visible = (n == name)
-        end
+        for _, f in pairs(frames) do f.Visible = (n == name) end
     end
     for n, btn in pairs(TabButtons) do
         if n == name then
@@ -879,7 +1080,7 @@ local function ShowTab(name)
     Scroll.CanvasSize = UDim2.new(0, 0, 0, ListLayout.AbsoluteContentSize.Y + 10)
 end
 
-local tabNames = {"Combat", "Movement", "Misc", "Binds"}
+local tabNames = {"Combat","Movement","Misc","Binds"}
 local tabW     = IsMobile and 54 or 76
 
 for _, name in pairs(tabNames) do
@@ -899,23 +1100,16 @@ for _, name in pairs(tabNames) do
 end
 
 -- ============================================================
--- [[ DRAGGABLE (ВИПРАВЛЕНО ShiftLock баг) ]]
+-- DRAGGABLE
 -- ============================================================
 local function MakeDraggable(handle, target)
-    local drag   = false
-    local dStart = nil
-    local dPos   = nil
-
+    local drag, dStart, dPos = false, nil, nil
     handle.InputBegan:Connect(function(inp)
         if inp.UserInputType == Enum.UserInputType.MouseButton1
         or inp.UserInputType == Enum.UserInputType.Touch then
-            drag   = true
-            dStart = inp.Position
-            dPos   = target.Position
+            drag = true; dStart = inp.Position; dPos = target.Position
         end
     end)
-
-    -- Локальний на handle — не конфліктує з ShiftLock
     handle.InputChanged:Connect(function(inp)
         if not drag then return end
         if inp.UserInputType == Enum.UserInputType.MouseMovement
@@ -927,30 +1121,22 @@ local function MakeDraggable(handle, target)
             )
         end
     end)
-
     handle.InputEnded:Connect(function(inp)
         if inp.UserInputType == Enum.UserInputType.MouseButton1
-        or inp.UserInputType == Enum.UserInputType.Touch then
-            drag = false
-        end
+        or inp.UserInputType == Enum.UserInputType.Touch then drag = false end
     end)
-
-    -- Запасний щоб drag не завис
     UIS.InputEnded:Connect(function(inp)
         if inp.UserInputType == Enum.UserInputType.MouseButton1
-        or inp.UserInputType == Enum.UserInputType.Touch then
-            drag = false
-        end
+        or inp.UserInputType == Enum.UserInputType.Touch then drag = false end
     end)
 end
-
 MakeDraggable(Header, Main)
 
 -- ============================================================
--- [[ UI КОМПОНЕНТИ ]]
+-- UI КОМПОНЕНТИ
 -- ============================================================
-local BtnH    = IsMobile and 36 or 32
-local Buttons = {}
+local BtnH     = IsMobile and 36 or 32
+local Buttons  = {}
 local UpdFuncs = {}
 
 local function MakeFrame(tabName)
@@ -980,9 +1166,6 @@ local function AddCategory(tabName, text)
     table.insert(Sections[tabName], f)
 end
 
--- ============================================================
--- [[ TOGGLE (ВИПРАВЛЕНО: крапка не налазить на текст) ]]
--- ============================================================
 local function AddToggle(tabName, name, key, cbOn, cbOff)
     local f   = MakeFrame(tabName)
     local btn = Instance.new("TextButton", f)
@@ -994,11 +1177,9 @@ local function AddToggle(tabName, name, key, cbOn, cbOff)
     btn.BorderSizePixel  = 0
     btn.AutoButtonColor  = false
     btn.TextXAlignment   = Enum.TextXAlignment.Left
-    -- Відступ зліва щоб текст НЕ налазив на крапку
     btn.Text             = "         "..name..": OFF"
     Instance.new("UICorner", btn)
 
-    -- Крапка поверх тексту (ZIndex +1), фіксована позиція
     local dot = Instance.new("Frame", btn)
     dot.Name             = "D"
     dot.Size             = UDim2.new(0, 8, 0, 8)
@@ -1034,13 +1215,20 @@ local function AddToggle(tabName, name, key, cbOn, cbOff)
         else
             if cbOff then task.spawn(cbOff) end
         end
+        -- Оновлюємо fly buttons при Toggle Fly
+        if key == "Fly" then UpdFlyBtns() end
+        -- Скидаємо aim при вимкненні
+        if key == "AimActive" and not Config[key] then
+            aimTarget = nil; aimLocked = false; aimLostFrames = 0
+        end
         Notify(name, Config[key] and "ON ✓" or "OFF ✗", 1.5)
     end)
 
     return Upd
 end
 
-local function AddSlider(tabName, label, min, max, default, configKey)
+-- SLIDER (загальний + для FOV/Smooth)
+local function AddSlider(tabName, label, min, max, default, configKey, cb)
     local f = Instance.new("Frame", Scroll)
     f.Size             = UDim2.new(0.97, 0, 0, IsMobile and 50 or 52)
     f.BackgroundColor3 = Color3.fromRGB(16, 16, 24)
@@ -1089,6 +1277,75 @@ local function AddSlider(tabName, label, min, max, default, configKey)
         knob.Position = UDim2.new(rel,-kSz/2,0.5,-kSz/2)
         lbl.Text      = label..": "..val
         Config[configKey] = val
+        if cb then cb(val) end
+    end
+
+    track.InputBegan:Connect(function(inp)
+        if inp.UserInputType==Enum.UserInputType.MouseButton1
+        or inp.UserInputType==Enum.UserInputType.Touch then drag=true; Upd(inp) end
+    end)
+    UIS.InputChanged:Connect(function(inp)
+        if not drag then return end
+        if inp.UserInputType==Enum.UserInputType.MouseMovement
+        or inp.UserInputType==Enum.UserInputType.Touch then Upd(inp) end
+    end)
+    UIS.InputEnded:Connect(function(inp)
+        if inp.UserInputType==Enum.UserInputType.MouseButton1
+        or inp.UserInputType==Enum.UserInputType.Touch then drag=false end
+    end)
+end
+
+-- Спеціальний слайдер для AimSmooth (0.05–1.0 з кроком 0.01)
+local function AddAimSmoothSlider(tabName)
+    local f = Instance.new("Frame", Scroll)
+    f.Size             = UDim2.new(0.97, 0, 0, IsMobile and 50 or 52)
+    f.BackgroundColor3 = Color3.fromRGB(16, 16, 24)
+    f.BorderSizePixel  = 0
+    f.Visible          = false
+    Instance.new("UICorner", f)
+    table.insert(Sections[tabName], f)
+
+    local default = math.floor(Config.AimSmooth * 100)
+    local lbl = Instance.new("TextLabel", f)
+    lbl.Size               = UDim2.new(1,-8,0,20)
+    lbl.Position           = UDim2.new(0,4,0,2)
+    lbl.BackgroundTransparency = 1
+    lbl.TextColor3         = Color3.fromRGB(200,200,210)
+    lbl.Font               = Enum.Font.GothamBold
+    lbl.TextSize           = IsMobile and 11 or 12
+    lbl.TextXAlignment     = Enum.TextXAlignment.Left
+    lbl.Text               = "Aim Smooth %: "..default
+
+    local track = Instance.new("Frame", f)
+    track.Size             = UDim2.new(0.92,0,0,IsMobile and 9 or 8)
+    track.Position         = UDim2.new(0.04,0,0,IsMobile and 32 or 34)
+    track.BackgroundColor3 = Color3.fromRGB(35,35,50)
+    track.BorderSizePixel  = 0
+    Instance.new("UICorner", track)
+
+    local fill = Instance.new("Frame", track)
+    fill.Size             = UDim2.new((default-5)/(100-5),0,1,0)
+    fill.BackgroundColor3 = Color3.fromRGB(0,100,255)
+    fill.BorderSizePixel  = 0
+    Instance.new("UICorner", fill)
+
+    local kSz = IsMobile and 16 or 13
+    local knob = Instance.new("Frame", track)
+    knob.Size             = UDim2.new(0,kSz,0,kSz)
+    knob.Position         = UDim2.new((default-5)/(100-5),-kSz/2,0.5,-kSz/2)
+    knob.BackgroundColor3 = Color3.fromRGB(255,255,255)
+    knob.BorderSizePixel  = 0
+    Instance.new("UICorner", knob)
+
+    local drag = false
+    local function Upd(inp)
+        local rel = math.clamp(
+            (inp.Position.X - track.AbsolutePosition.X) / track.AbsoluteSize.X, 0, 1)
+        local val = math.floor(5 + rel * (100-5))
+        fill.Size     = UDim2.new(rel,0,1,0)
+        knob.Position = UDim2.new(rel,-kSz/2,0.5,-kSz/2)
+        lbl.Text      = "Aim Smooth %: "..val
+        Config.AimSmooth = val / 100
     end
 
     track.InputBegan:Connect(function(inp)
@@ -1145,13 +1402,19 @@ local function AddTP(tabName, name, vec)
 end
 
 -- ============================================================
--- [[ НАПОВНЕННЯ ]]
+-- POPULATE TABS
 -- ============================================================
 
 -- COMBAT
-AddCategory("Combat", "COMBAT")
-AddToggle("Combat","AIM LOCK",  "AimActive",
-    nil, function() Config.LockedTarget = nil end)
+AddCategory("Combat","COMBAT")
+AddToggle("Combat","AIM LOCK","AimActive",
+    function()
+        aimTarget = nil; aimLocked = false
+        aimLostFrames = 0; aimLastSwitch = 0
+    end,
+    function()
+        aimTarget = nil; aimLocked = false; aimLostFrames = 0
+    end)
 AddToggle("Combat","SILENT AIM","SilentAim",
     function() silentActive = true  end,
     function() silentActive = false end)
@@ -1160,11 +1423,20 @@ AddToggle("Combat","ESP","ESP",
 AddToggle("Combat","MAGNET","Magnet",
     nil, function() Config.MagnetTarget = nil end)
 
+AddCategory("Combat","AIM CONFIG")
+AddSlider("Combat","Aim FOV (px)",50,500,Config.AimFOV,"AimFOV",function(v)
+    Config.AimFOV = v; UpdateFOVCircle()
+end)
+AddAimSmoothSlider("Combat")
+
 -- MOVEMENT
 AddCategory("Movement","MOVEMENT")
 AddToggle("Movement","FLY","Fly",
-    nil,
     function()
+        UpdFlyBtns()
+    end,
+    function()
+        UpdFlyBtns()
         local hum  = GetHum()
         local root = GetRoot()
         if hum  then hum.PlatformStand = false; hum.WalkSpeed = 16 end
@@ -1173,16 +1445,14 @@ AddToggle("Movement","FLY","Fly",
             if bv then bv:Destroy() end
         end
     end)
-AddSlider("Movement","FLY SPEED",10,IsMobile and 150 or 250,
-    Config.FlySpeedValue,"FlySpeedValue")
+AddSlider("Movement","FLY SPEED",10,IsMobile and 150 or 250,Config.FlySpeedValue,"FlySpeedValue")
 AddToggle("Movement","SPEED HACK","Speed",
     nil,
     function()
         local hum = GetHum()
         if hum then hum.WalkSpeed = 16 end
     end)
-AddSlider("Movement","WALK SPEED",16,IsMobile and 100 or 150,
-    Config.WalkSpeedValue,"WalkSpeedValue")
+AddSlider("Movement","WALK SPEED",16,IsMobile and 100 or 150,Config.WalkSpeedValue,"WalkSpeedValue")
 AddToggle("Movement","NOCLIP","Noclip",
     nil, function() RestoreCollision() end)
 AddToggle("Movement","INF JUMP","InfJump")
@@ -1208,20 +1478,17 @@ AddToggle("Misc","FPS BOOST","FPSBoost",
 AddCategory("Misc","ACTIONS")
 AddAction("Misc","🏦 AUTO ROB BANK",Color3.fromRGB(150,20,20),StartRobbery)
 
--- ============================================================
--- [[ BINDS ТАБ ]]
--- ============================================================
+-- BINDS
 local bindableActions = {
-    { key = "Fly",       name = "FLY"       },
-    { key = "AimActive", name = "AIM LOCK"  },
-    { key = "Noclip",    name = "NOCLIP"    },
-    { key = "SilentAim", name = "SILENT AIM"},
-    { key = "ToggleUI",  name = "TOGGLE UI" },
+    {key="Fly",       name="FLY"},
+    {key="AimActive", name="AIM LOCK"},
+    {key="Noclip",    name="NOCLIP"},
+    {key="SilentAim", name="SILENT AIM"},
+    {key="ToggleUI",  name="TOGGLE UI"},
 }
 
 local BindBtns = {}
 
--- Info frame
 local infoF = Instance.new("Frame", Scroll)
 infoF.Size             = UDim2.new(0.97,0,0,IsMobile and 38 or 28)
 infoF.BackgroundColor3 = Color3.fromRGB(12,12,22)
@@ -1274,7 +1541,6 @@ local function AddBindRow(tabName, actionKey, actionName)
     bindBtn.Text = curBind
         and tostring(curBind):gsub("Enum.KeyCode.","")
         or "NONE"
-
     Instance.new("UICorner", bindBtn)
     local bSt = Instance.new("UIStroke", bindBtn)
     bSt.Color = Color3.fromRGB(0,100,200); bSt.Thickness = 1
@@ -1295,10 +1561,9 @@ for _, entry in pairs(bindableActions) do
 end
 
 -- ============================================================
--- [[ BIND INPUT HANDLER ]]
+-- BIND INPUT HANDLER
 -- ============================================================
 UIS.InputBegan:Connect(function(inp, gpe)
-    -- Чекаємо новий бінд
     if waitingForBind then
         if inp.UserInputType == Enum.UserInputType.Keyboard then
             local newKey = inp.KeyCode
@@ -1308,8 +1573,8 @@ UIS.InputBegan:Connect(function(inp, gpe)
                 BindBtns[action].Text      = tostring(newKey):gsub("Enum.KeyCode.","")
                 BindBtns[action].TextColor3 = Color3.fromRGB(170,200,255)
             end
-            Notify("BIND", (BindNames[action] or action).." → "
-                ..tostring(newKey):gsub("Enum.KeyCode.",""), 2)
+            Notify("BIND",(BindNames[action] or action).." → "
+                ..tostring(newKey):gsub("Enum.KeyCode.",""),2)
             waitingForBind = nil
         end
         return
@@ -1317,7 +1582,6 @@ UIS.InputBegan:Connect(function(inp, gpe)
 
     if gpe then return end
 
-    -- Перевіряємо бінди
     for action, key in pairs(Binds) do
         if inp.KeyCode ~= key then continue end
 
@@ -1328,6 +1592,7 @@ UIS.InputBegan:Connect(function(inp, gpe)
         elseif action == "Fly" then
             Config.Fly = not Config.Fly
             if UpdFuncs.Fly then UpdFuncs.Fly(Config.Fly) end
+            UpdFlyBtns()
             if not Config.Fly then
                 local hum  = GetHum()
                 local root = GetRoot()
@@ -1342,7 +1607,12 @@ UIS.InputBegan:Connect(function(inp, gpe)
         elseif action == "AimActive" then
             Config.AimActive = not Config.AimActive
             if UpdFuncs.AimActive then UpdFuncs.AimActive(Config.AimActive) end
-            if not Config.AimActive then Config.LockedTarget = nil end
+            if not Config.AimActive then
+                aimTarget = nil; aimLocked = false; aimLostFrames = 0
+            else
+                aimTarget = nil; aimLocked = false
+                aimLostFrames = 0; aimLastSwitch = 0
+            end
             Notify("AIM LOCK", Config.AimActive and "ON ✓" or "OFF ✗", 1.5)
 
         elseif action == "Noclip" then
@@ -1361,7 +1631,7 @@ UIS.InputBegan:Connect(function(inp, gpe)
 end)
 
 -- ============================================================
--- [[ M КНОПКА (ВИПРАВЛЕНО ShiftLock баг) ]]
+-- M BUTTON
 -- ============================================================
 local MBtnSz = IsMobile and 54 or 44
 
@@ -1382,7 +1652,6 @@ local mSt = Instance.new("UIStroke", MBtn)
 mSt.Color     = Color3.fromRGB(255, 255, 255)
 mSt.Thickness = 2
 
--- Пульсація
 task.spawn(function()
     while true do
         TweenService:Create(MBtn, TweenInfo.new(1.5), {
@@ -1396,26 +1665,15 @@ task.spawn(function()
     end
 end)
 
--- Drag M кнопки (локальний InputChanged — не баить ShiftLock)
 do
-    local mDrag  = false
-    local mStart = nil
-    local mPos   = nil
-    local mTick  = 0
-    local mMoved = false
-
+    local mDrag, mStart, mPos, mTick, mMoved = false, nil, nil, 0, false
     MBtn.InputBegan:Connect(function(inp)
         if inp.UserInputType == Enum.UserInputType.MouseButton1
         or inp.UserInputType == Enum.UserInputType.Touch then
-            mDrag  = true
-            mStart = inp.Position
-            mPos   = MBtn.Position
-            mTick  = tick()
-            mMoved = false
+            mDrag  = true; mStart = inp.Position
+            mPos   = MBtn.Position; mTick = tick(); mMoved = false
         end
     end)
-
-    -- ЛОКАЛЬНИЙ InputChanged на кнопці
     MBtn.InputChanged:Connect(function(inp)
         if not mDrag then return end
         if inp.UserInputType == Enum.UserInputType.MouseMovement
@@ -1428,7 +1686,6 @@ do
             )
         end
     end)
-
     MBtn.InputEnded:Connect(function(inp)
         if inp.UserInputType == Enum.UserInputType.MouseButton1
         or inp.UserInputType == Enum.UserInputType.Touch then
@@ -1439,23 +1696,19 @@ do
             mDrag = false
         end
     end)
-
-    -- Запасний
     UIS.InputEnded:Connect(function(inp)
         if inp.UserInputType == Enum.UserInputType.MouseButton1
-        or inp.UserInputType == Enum.UserInputType.Touch then
-            mDrag = false
-        end
+        or inp.UserInputType == Enum.UserInputType.Touch then mDrag = false end
     end)
 end
 
 -- ============================================================
--- [[ СТАРТ ]]
+-- START
 -- ============================================================
 ShowTab("Combat")
 
 Notify("Markiyan PRO V47",
     IsMobile
-        and "📱 Mobile оптимізовано | M=меню | Binds→таб"
-        or  "M=меню | G=aim | F=fly | V=noclip | Binds→таб",
+        and "📱 Mobile | M=меню | FOV коло | OMNI Aim ✓"
+        or  "M=меню | G=aim | F=fly | V=noclip | FOV коло ✓",
     4)
