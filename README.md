@@ -211,6 +211,7 @@ local LootCache = {
     ["rose"]=true,
     -- дропи / ящики
     ["airdrop marker"]=true,
+    ["electronics"]=true,
     ["airstrike"]=true,
     ["armored truck"]=true,
     ["component boxes"]=true,
