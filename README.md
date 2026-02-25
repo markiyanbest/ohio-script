@@ -1,4 +1,4 @@
--- markiyanbest's script (V48 - FIXED & OPTIMIZED)
+-- markiyanbest's script (V49 - FULLY FIXED)
 local Players      = game:GetService("Players")
 local lp           = Players.LocalPlayer
 local RS           = game:GetService("RunService")
@@ -37,6 +37,22 @@ if IsMobile then
             pcall(function() v.Enabled = false end)
         end
     end
+end
+
+-- ============================================================
+-- fireproximityprompt SAFE WRAPPER
+-- ============================================================
+local function SafeFirePrompt(prompt)
+    if fireproximityprompt then
+        local ok = pcall(fireproximityprompt, prompt)
+        if ok then return true end
+    end
+    local ok2 = pcall(function()
+        prompt:InputHoldBegin()
+        task.wait(0.05)
+        prompt:InputHoldEnd()
+    end)
+    return ok2
 end
 
 local COORDS = {
@@ -93,20 +109,178 @@ local BindNames = {
 local waitingForBind = nil
 
 -- ============================================================
--- LOOT TABLES
+-- PRIORITY LOOT (беруться ПЕРШИМИ, ігноруючи решту)
 -- ============================================================
-local LootCache = {
-    ["medkit"]=true,["bandage"]=true,["pistol"]=true,["rifle"]=true,
-    ["shotgun"]=true,["smg"]=true,["lmg"]=true,["armor"]=true,
-    ["vest"]=true,["money"]=true,["cash"]=true,["drug"]=true,
-    ["cocaine"]=true,["weed"]=true,["ammo"]=true,["weapon"]=true,
+local PriorityLoot = {
+    ["money printer"]         = true,
+    ["unusual money printer"] = true,
+    ["printer"]               = true,
+    ["candy cane"]            = true,
+    ["candy"]                 = true,
+    ["cotton candy"]          = true,
+    ["balloon"]               = true,
+    ["heart balloon"]         = true,
+    ["clover balloon"]        = true,
+    ["hallow"]                = true,
+    ["halloween"]             = true,
 }
 
 -- ============================================================
--- BLACKLIST (повний блок)
+-- LOOT TABLES
+-- ============================================================
+local LootCache = {
+    -- зброя
+    ["acid gun"]=true,
+    ["admin ak-47"]=true,
+    ["admin nuke"]=true,
+    ["admin rpg"]=true,
+    ["ak-47"]=true,
+    ["ar-15"]=true,
+    ["as val"]=true,
+    ["aug"]=true,
+    ["barrett m107"]=true,
+    ["c4"]=true,
+    ["clown mallet"]=true,
+    ["crowbar"]=true,
+    ["deagle"]=true,
+    ["double barrel"]=true,
+    ["dragunov"]=true,
+    ["fire extinguisher"]=true,
+    ["fireaxe"]=true,
+    ["flamethrower"]=true,
+    ["glock"]=true,
+    ["glock 18"]=true,
+    ["gold ak-47"]=true,
+    ["gold deagle"]=true,
+    ["gravity gun"]=true,
+    ["m1 garand"]=true,
+    ["m1911"]=true,
+    ["m249 saw"]=true,
+    ["m4a1"]=true,
+    ["meat grinder"]=true,
+    ["money gun"]=true,
+    ["mossberg"]=true,
+    ["mp7"]=true,
+    ["python"]=true,
+    ["raygun"]=true,
+    ["rpg"]=true,
+    ["rpk"]=true,
+    ["saber"]=true,
+    ["saiga 12"]=true,
+    ["sawn off"]=true,
+    ["spectral scythe"]=true,
+    ["suitcase nuke"]=true,
+    ["usp 45"]=true,
+    ["uzi"]=true,
+    -- броня / медицина
+    ["bandage"]=true,
+    ["heavy vest"]=true,
+    ["medium vest"]=true,
+    ["medkit"]=true,
+    ["military vest"]=true,
+    ["stretcher"]=true,
+    ["surgeon mask"]=true,
+    -- гроші / принтери
+    ["money printer"]=true,
+    ["unusual money printer"]=true,
+    ["atm"]=true,
+    -- їжа / баффи
+    ["keycard"]=true,
+    ["key card"]=true,
+    ["police keycard"]=true,
+    ["blue keycard"]=true,
+    ["red keycard"]=true,
+    ["green keycard"]=true,
+    ["yellow keycard"]=true,
+    ["white keycard"]=true,
+    ["black keycard"]=true,
+    ["card"]=true,
+    ["key"]=true,
+    ["access card"]=true,
+    ["id card"]=true,
+    ["swipe card"]=true,
+    ["banana"]=true,
+    ["banana peel"]=true,
+    ["candy cane"]=true,
+    ["choco bunny"]=true,
+    ["coffee"]=true,
+    ["cookie"]=true,
+    ["cotton candy"]=true,
+    ["diamond taco"]=true,
+    ["donut"]=true,
+    ["rose"]=true,
+    -- дропи / ящики
+    ["airdrop marker"]=true,
+    ["airstrike"]=true,
+    ["armored truck"]=true,
+    ["component boxes"]=true,
+    ["crafting table"]=true,
+    ["drone"]=true,
+    ["easter basket"]=true,
+    ["green lucky block"]=true,
+    ["heavy c4"]=true,
+    ["landmines"]=true,
+    ["large present"]=true,
+    ["locker"]=true,
+    ["orange lucky block"]=true,
+    ["presents"]=true,
+    ["purple lucky block"]=true,
+    ["red lucky block"]=true,
+    ["safes"]=true,
+    ["slot machine"]=true,
+    -- святкові / декор
+    ["balloon"]=true,
+    ["clover balloon"]=true,
+    ["clown"]=true,
+    ["dumbell"]=true,
+    ["festive guitar"]=true,
+    ["heart balloon"]=true,
+    ["hoverboard"]=true,
+    ["red bandana"]=true,
+    ["sombrero hat"]=true,
+    ["sparkler"]=true,
+    ["hallow"]=true,
+    ["halloween"]=true,
+    -- короткі ключові слова (fallback)
+    ["medkit"]=true,
+    ["bandage"]=true,
+    ["pistol"]=true,
+    ["rifle"]=true,
+    ["shotgun"]=true,
+    ["smg"]=true,
+    ["lmg"]=true,
+    ["armor"]=true,
+    ["vest"]=true,
+    ["money"]=true,
+    ["cash"]=true,
+    ["drug"]=true,
+    ["cocaine"]=true,
+    ["weed"]=true,
+    ["weapon"]=true,
+    ["sniper"]=true,
+    ["explosive"]=true,
+    ["supply"]=true,
+    ["crate"]=true,
+    ["loot"]=true,
+    ["pickup"]=true,
+    ["collect"]=true,
+    ["printer"]=true,
+    ["present"]=true,
+    ["lucky"]=true,
+    ["nuke"]=true,
+    ["gun"]=true,
+    ["knife"]=true,
+    ["sword"]=true,
+    ["candy"]=true,
+    ["sweet"]=true,
+    ["treat"]=true,
+}
+
+-- ============================================================
+-- BLACKLIST (повний список + нові записи)
 -- ============================================================
 local BlacklistCache = {
-    -- базовий блок
+    -- двері / знаки / бар'єри
     ["spawn"]=true,
     ["door"]=true,
     ["gate"]=true,
@@ -119,7 +293,14 @@ local BlacklistCache = {
     ["workbench"]=true,
     ["press"]=true,
     ["turn"]=true,
-    -- unlock / cash earned повний блок
+    -- амуніція (не брати)
+    ["ammo box"]=true,
+    ["ammobox"]=true,
+    ["ammunition box"]=true,
+    ["ammo crate"]=true,
+    ["ammocrate"]=true,
+    ["ammo"]=true,
+    -- локдаун / вимоги
     ["unlock after"]=true,
     ["cash earned"]=true,
     ["1m cash"]=true,
@@ -141,10 +322,39 @@ local BlacklistCache = {
     ["lock"]=true,
     ["earned"]=true,
     ["after"]=true,
+    ["knife"]=true,
+    ["mask"]=true,
+    ["fireaxe"]=true,
+    ["cookie"]=true,
+    ["light"]=true,
+    ["garage"]=true,
+    -- ========== НОВІ ЗАПИСИ ==========
+    -- Фаєрверки (всі варіанти)
+    ["firework"]=true,
+    ["fireworks"]=true,
+    ["firework cake"]=true,
+    ["firework cone"]=true,
+    ["firework mortar"]=true,
+    ["pink firework"]=true,
+    ["roman candle"]=true,
+    ["sparkler"]=true,
+    ["firework launcher"]=true,
+    ["bottle rocket"]=true,
+    ["firecracker"]=true,
+    -- Заборонені предмети
+    ["apple"]=true,
+    ["paintball gun"]=true,
+    ["paintball"]=true,
+    ["small extinguisher"]=true,
+    ["pickaxe"]=true,
+    ["pick axe"]=true,
+    ["mining pick"]=true,
 }
 
--- Повний список pattern блоків для авто фарму
 local HardBlockPatterns = {
+    "ammo%s*box",
+    "ammo%s*crate",
+    "ammunition%s*box",
     "unlock after",
     "cash earned",
     "unlocks at",
@@ -158,17 +368,29 @@ local HardBlockPatterns = {
     "vip only",
     "members only",
     "robux",
-    "%d+%.%d+m",   -- 2.5m / 1.5m / 0.5m
-    "%d+m cash",   -- 1m cash / 2m cash
-    "%d+m earned", -- 1m earned
-    "%d+k cash",   -- 500k cash
-    "%d+k earned", -- 100k earned
-    "after %d",    -- after 2.5
+    "%d+%.%d+m",
+    "%d+m cash",
+    "%d+m earned",
+    "%d+k cash",
+    "%d+k earned",
+    "after %d",
     "after earning",
     "earn %d",
-    "%.5m",        -- .5m
-    "2%.5",        -- 2.5
-    "1%.0",        -- 1.0m
+    "%.5m",
+    "2%.5",
+    "1%.0",
+    -- Фаєрверки (патерни)
+    "firework",
+    "roman%s*candle",
+    "sparkler",
+    "bottle%s*rocket",
+    "firecracker",
+    "pink%s*firework",
+    -- Заборонені предмети (патерни)
+    "paintball",
+    "small%s*extinguisher",
+    "pickaxe",
+    "pick%s*axe",
 }
 
 -- ============================================================
@@ -203,9 +425,12 @@ local function SafeTeleport(pos)
     local root = GetRoot()
     if not root then return false end
     local char = GetChar()
-    pcall(function()
+    local ok = pcall(function()
         char:PivotTo(CFrame.new(pos + Vector3.new(0, 3, 0)))
     end)
+    if not ok then
+        pcall(function() root.CFrame = CFrame.new(pos + Vector3.new(0, 3, 0)) end)
+    end
     return true
 end
 
@@ -215,6 +440,43 @@ local function IsTargetAlive(target)
     if not char then return false end
     local h = char:FindFirstChildOfClass("Humanoid")
     return h and h.Health > 0
+end
+
+-- ============================================================
+-- IsBlocked
+-- ============================================================
+local function IsBlocked(text)
+    for kw in pairs(BlacklistCache) do
+        if text:find(kw, 1, true) then return true end
+    end
+    for _, pattern in pairs(HardBlockPatterns) do
+        if text:find(pattern) then return true end
+    end
+    return false
+end
+
+-- ============================================================
+-- IsPriority — перевірка пріоритетних предметів
+-- ============================================================
+local function IsPriority(text, parentName)
+    local pLow = parentName:lower()
+    if PriorityLoot[pLow] then return true end
+    for kw in pairs(PriorityLoot) do
+        if text:find(kw, 1, true) then return true end
+    end
+    return false
+end
+
+-- ============================================================
+-- IsLoot — перевірка повного імені об'єкта
+-- ============================================================
+local function IsLoot(text, parentName)
+    local pLow = parentName:lower()
+    if LootCache[pLow] then return true end
+    for kw in pairs(LootCache) do
+        if text:find(kw, 1, true) then return true end
+    end
+    return false
 end
 
 -- ============================================================
@@ -246,7 +508,7 @@ local function IsVisible(char)
     local result = workspace:Raycast(origin, dir.Unit * (dist - 0.5), aimRayParams)
     if not result then return true end
     if result.Instance:IsDescendantOf(char) then return true end
-    if result.Instance.Transparency >= 0.8 then return true end
+    if result.Instance.Transparency >= 0.8  then return true end
     return false
 end
 
@@ -302,7 +564,7 @@ local function GetBestAimTarget()
                         aimLostFrames = 0
                         return char
                     end
-                    aimLostFrames += 1
+                    aimLostFrames = aimLostFrames + 1
                     if aimLostFrames < 12 then return char end
                 end
             end
@@ -356,15 +618,26 @@ end)
 local MobUp, MobDn = false, false
 
 -- ============================================================
--- SILENT AIM
+-- SILENT AIM (FIXED)
 -- ============================================================
 local lastSilentT = 0
+local isTouching  = false
+
+UIS.TouchStarted:Connect(function() isTouching = true  end)
+UIS.TouchEnded:Connect(function()   isTouching = false end)
+
 local function DoSilentAim()
     if not Config.SilentAim then return end
     local now = tick()
     if now - lastSilentT < (IsMobile and 0.05 or 0.016) then return end
     lastSilentT = now
-    if not UIS:IsMouseButtonPressed(Enum.UserInputType.MouseButton1) then return end
+    local shooting = false
+    if IsPC then
+        shooting = UIS:IsMouseButtonPressed(Enum.UserInputType.MouseButton1)
+    else
+        shooting = isTouching
+    end
+    if not shooting then return end
     local tgtChar = GetBestAimTarget()
     if not tgtChar then return end
     local head = FindAimPart(tgtChar)
@@ -427,6 +700,7 @@ task.spawn(function()
         local function TryUseItem(keywords)
             local found = nil
             for _, item in pairs(lp.Backpack:GetChildren()) do
+                if not item:IsA("Tool") then continue end
                 local n = item.Name:lower()
                 for _, kw in pairs(keywords) do
                     if n:find(kw, 1, true) then found = item; break end
@@ -435,11 +709,10 @@ task.spawn(function()
             end
             if not found then
                 for _, item in pairs(char:GetChildren()) do
-                    if item:IsA("Tool") then
-                        local n = item.Name:lower()
-                        for _, kw in pairs(keywords) do
-                            if n:find(kw, 1, true) then found = item; break end
-                        end
+                    if not item:IsA("Tool") then continue end
+                    local n = item.Name:lower()
+                    for _, kw in pairs(keywords) do
+                        if n:find(kw, 1, true) then found = item; break end
                     end
                     if found then break end
                 end
@@ -448,21 +721,21 @@ task.spawn(function()
             pcall(function()
                 if found.Parent == lp.Backpack then
                     hum:EquipTool(found)
-                    task.wait(0.2)
+                    task.wait(0.25)
                 end
                 local tool = char:FindFirstChild(found.Name)
                 if tool then tool:Activate() end
             end)
-            task.wait(0.6)
+            task.wait(0.7)
             pcall(function() hum:UnequipTools() end)
             healCooldown = tick()
         end
 
         if Config.Heal and hum.Health < hum.MaxHealth * 0.75 then
-            TryUseItem({"medkit","bandage","firstaid","aid"})
+            TryUseItem({"medkit","bandage","firstaid","aid","heal","health"})
         end
         if Config.Armor then
-            TryUseItem({"armor","vest","helmet"})
+            TryUseItem({"armor","vest","helmet","shield"})
         end
     end
 end)
@@ -472,15 +745,19 @@ end)
 -- ============================================================
 lp.Idled:Connect(function()
     if Config.AntiAFK then
-        VirtualUser:CaptureController()
-        VirtualUser:ClickButton2(Vector2.new())
+        pcall(function()
+            VirtualUser:CaptureController()
+            VirtualUser:ClickButton2(Vector2.new())
+        end)
     end
 end)
 task.spawn(function()
-    while task.wait(55) do
+    while task.wait(50) do
         if Config.AntiAFK then
-            VirtualUser:CaptureController()
-            VirtualUser:ClickButton2(Vector2.new())
+            pcall(function()
+                VirtualUser:CaptureController()
+                VirtualUser:ClickButton2(Vector2.new())
+            end)
         end
     end
 end)
@@ -504,7 +781,7 @@ local function StartRobbery()
                 if v:IsA("ProximityPrompt") and v.Enabled then
                     local pp = v.Parent
                     if pp and (root.Position - pp:GetPivot().Position).Magnitude < 15 then
-                        fireproximityprompt(v)
+                        SafeFirePrompt(v)
                     end
                 end
             end
@@ -522,13 +799,15 @@ local ESPCache = {}
 
 local function ClearESP(char)
     if not char then return end
-    local head = char:FindFirstChild("Head")
-    if head then
-        local g = head:FindFirstChild("MrkESP")
-        if g then g:Destroy() end
-    end
-    local hl = char:FindFirstChild("MrkHL")
-    if hl then hl:Destroy() end
+    pcall(function()
+        local head = char:FindFirstChild("Head")
+        if head then
+            local g = head:FindFirstChild("MrkESP")
+            if g then g:Destroy() end
+        end
+        local hl = char:FindFirstChild("MrkHL")
+        if hl then hl:Destroy() end
+    end)
 end
 
 local function ClearAllESP()
@@ -576,13 +855,16 @@ task.spawn(function()
                 lbl.TextWrapped            = true
                 lbl.TextStrokeTransparency = 0.3
                 if IsPC then
-                    local hl = Instance.new("Highlight")
-                    hl.Name                = "MrkHL"
-                    hl.FillColor           = Color3.new(1, 0, 0)
-                    hl.OutlineColor        = Color3.new(1, 1, 1)
-                    hl.FillTransparency    = 0.65
-                    hl.OutlineTransparency = 0
-                    hl.Parent              = char
+                    pcall(function()
+                        local hl = Instance.new("Highlight")
+                        hl.Name                = "MrkHL"
+                        hl.FillColor           = Color3.new(1, 0, 0)
+                        hl.OutlineColor        = Color3.new(1, 1, 1)
+                        hl.FillTransparency    = 0.65
+                        hl.OutlineTransparency = 0
+                        hl.Adornee             = char
+                        hl.Parent              = char
+                    end)
                 end
                 ESPCache[v] = {gui = gui, lbl = lbl}
                 cache = ESPCache[v]
@@ -605,6 +887,19 @@ Players.PlayerRemoving:Connect(function(p)
     if ESPCache[p] then ClearESP(p.Character); ESPCache[p] = nil end
 end)
 
+Players.PlayerAdded:Connect(function(p)
+    p.CharacterRemoving:Connect(function(char)
+        if ESPCache[p] then ClearESP(char); ESPCache[p] = nil end
+    end)
+end)
+for _, p in pairs(Players:GetPlayers()) do
+    if p ~= lp then
+        p.CharacterRemoving:Connect(function(char)
+            if ESPCache[p] then ClearESP(char); ESPCache[p] = nil end
+        end)
+    end
+end
+
 -- ============================================================
 -- NOCLIP
 -- ============================================================
@@ -612,66 +907,86 @@ local function RestoreCollision()
     local char = GetChar()
     if not char then return end
     for _, v in pairs(char:GetDescendants()) do
-        if v:IsA("BasePart") then v.CanCollide = true end
+        if v:IsA("BasePart") then
+            pcall(function() v.CanCollide = true end)
+        end
     end
 end
 
 -- ============================================================
--- AUTO FARM (повний блок перевірки)
+-- AUTO FARM (ПРІОРИТЕТ + ПОВНА ЛОГІКА)
 -- ============================================================
-local function IsBlocked(text)
-    -- Перевірка 1: точний збіг у BlacklistCache
-    for kw in pairs(BlacklistCache) do
-        if text:find(kw, 1, true) then
-            return true
-        end
-    end
-    -- Перевірка 2: pattern блок (unlock/cash earned/числа)
-    for _, pattern in pairs(HardBlockPatterns) do
-        if text:find(pattern) then
-            return true
-        end
-    end
-    return false
-end
-
 local farmRunning = false
+
+-- Допоміжна функція: зібрати один промпт
+local function CollectPrompt(v)
+    if not v or not v.Parent then return end
+    if not v.Enabled then return end
+    if not IsHumAlive() then return end
+    local pos = Vector3.new(0,0,0)
+    pcall(function() pos = v.Parent:GetPivot().Position end)
+    SafeTeleport(pos)
+    task.wait(IsMobile and 0.4 or 0.25)
+    SafeFirePrompt(v)
+    task.wait(IsMobile and 0.3 or 0.2)
+end
+
 task.spawn(function()
     while task.wait(IsMobile and 1.0 or 0.5) do
         if not Config.Farm or farmRunning then continue end
         if not IsHumAlive() then continue end
         farmRunning = true
+
         pcall(function()
+            -- Зібрати всі ProximityPrompt-и
+            local prompts = {}
             for _, v in pairs(workspace:GetDescendants()) do
-                if not Config.Farm then break end
-                if not v:IsA("ProximityPrompt") or not v.Enabled then continue end
-
-                -- Збираємо весь текст промпту
-                local text = (
-                    v.Parent.Name .. " " ..
-                    v.ActionText  .. " " ..
-                    v.ObjectText
-                ):lower()
-
-                -- Перевірка whitelist
-                local ok = false
-                for kw in pairs(LootCache) do
-                    if text:find(kw, 1, true) then ok = true; break end
-                end
-
-                -- Повна перевірка блоку
-                if ok and IsBlocked(text) then
-                    ok = false
-                end
-
-                if ok then
-                    SafeTeleport(v.Parent:GetPivot().Position)
-                    task.wait(IsMobile and 0.4 or 0.25)
-                    pcall(function() fireproximityprompt(v) end)
-                    task.wait(IsMobile and 0.3 or 0.2)
+                if v:IsA("ProximityPrompt") and v.Enabled then
+                    table.insert(prompts, v)
                 end
             end
+
+            -- Розділяємо на пріоритетні та звичайні
+            local priorityList = {}
+            local normalList   = {}
+
+            for _, v in pairs(prompts) do
+                if not v or not v.Parent then continue end
+                if not v.Enabled then continue end
+
+                local parentName = v.Parent and v.Parent.Name or ""
+                local text = (
+                    parentName .. " " ..
+                    (v.ActionText or "") .. " " ..
+                    (v.ObjectText or "")
+                ):lower()
+
+                -- Спочатку перевіряємо blacklist
+                if IsBlocked(text) then continue end
+
+                -- Перевіряємо пріоритет
+                if IsPriority(text, parentName) then
+                    table.insert(priorityList, v)
+                elseif IsLoot(text, parentName) then
+                    table.insert(normalList, v)
+                end
+            end
+
+            -- Спочатку беремо пріоритетні
+            for _, v in pairs(priorityList) do
+                if not Config.Farm then break end
+                if not IsHumAlive() then break end
+                CollectPrompt(v)
+            end
+
+            -- Потім звичайні
+            for _, v in pairs(normalList) do
+                if not Config.Farm then break end
+                if not IsHumAlive() then break end
+                CollectPrompt(v)
+            end
         end)
+
         farmRunning = false
     end
 end)
@@ -712,7 +1027,6 @@ RS.RenderStepped:Connect(function(dt)
         local root = GetRoot()
         local hum  = GetHum()
         if root and hum then
-            hum.PlatformStand = false
             local moveX, moveZ = 0, 0
             if IsMobile and Controls then
                 local mv = Controls:GetMoveVector()
@@ -730,7 +1044,7 @@ RS.RenderStepped:Connect(function(dt)
             if UIS:IsKeyDown(Enum.KeyCode.LeftControl) or MobDn then upD = -1 end
             dir = dir + Vector3.new(0, upD, 0)
             if dir.Magnitude > 1 then dir = dir.Unit end
-            root.CFrame += dir * Config.FlySpeedValue * dt
+            root.CFrame = root.CFrame + dir * Config.FlySpeedValue * dt
             root.AssemblyLinearVelocity  = Vector3.zero
             root.AssemblyAngularVelocity = Vector3.zero
         end
@@ -745,23 +1059,31 @@ RS.Heartbeat:Connect(function(dt)
     local root = GetRoot()
     if not hum or not root then return end
 
-    if Config.AntiSeat and hum.SeatPart then hum.Sit = false end
+    if Config.AntiSeat and hum.SeatPart then
+        pcall(function() hum.Sit = false end)
+    end
 
     if Config.Speed and not Config.Fly and IsHumAlive() then
-        hum.WalkSpeed = Config.WalkSpeedValue
+        if hum.WalkSpeed ~= Config.WalkSpeedValue then
+            hum.WalkSpeed = Config.WalkSpeedValue
+        end
     elseif not Config.Fly and not Config.Speed then
         if hum.WalkSpeed ~= 16 then hum.WalkSpeed = 16 end
     end
 
     if not Config.Fly then
-        if hum.PlatformStand then hum.PlatformStand = false end
+        if hum.PlatformStand then
+            pcall(function() hum.PlatformStand = false end)
+        end
     end
 
     if Config.Noclip then
         local char = GetChar()
         if char then
             for _, v in pairs(char:GetDescendants()) do
-                if v:IsA("BasePart") then v.CanCollide = false end
+                if v:IsA("BasePart") then
+                    pcall(function() v.CanCollide = false end)
+                end
             end
         end
     end
@@ -774,11 +1096,13 @@ RS.Heartbeat:Connect(function(dt)
             local tHRP = Config.MagnetTarget.Character
                 and Config.MagnetTarget.Character:FindFirstChild("HumanoidRootPart")
             if tHRP then
-                root.CFrame = root.CFrame:Lerp(
-                    tHRP.CFrame * CFrame.new(0, 0, 3),
-                    IsMobile and 0.15 or 0.22
-                )
-                root.AssemblyLinearVelocity = tHRP.AssemblyLinearVelocity
+                pcall(function()
+                    root.CFrame = root.CFrame:Lerp(
+                        tHRP.CFrame * CFrame.new(0, 0, 3),
+                        IsMobile and 0.15 or 0.22
+                    )
+                    root.AssemblyLinearVelocity = tHRP.AssemblyLinearVelocity
+                end)
             end
         end
     else
@@ -797,16 +1121,26 @@ end)
 -- INFINITE JUMP
 -- ============================================================
 UIS.JumpRequest:Connect(function()
-    if Config.InfJump then
-        local hum = GetHum()
-        if hum then hum:ChangeState(Enum.HumanoidStateType.Jumping) end
+    if not Config.InfJump then return end
+    local hum = GetHum()
+    if hum and hum:GetState() ~= Enum.HumanoidStateType.Jumping then
+        pcall(function()
+            hum:ChangeState(Enum.HumanoidStateType.Jumping)
+        end)
     end
 end)
 
 -- ============================================================
 -- CLEANUP ON RESPAWN
 -- ============================================================
-lp.CharacterRemoving:Connect(function()
+lp.CharacterRemoving:Connect(function(char)
+    if Config.Noclip then
+        pcall(function()
+            for _, v in pairs(char:GetDescendants()) do
+                if v:IsA("BasePart") then v.CanCollide = true end
+            end
+        end)
+    end
     Config.Fly    = false
     Config.Noclip = false
     aimTarget = nil; aimLocked = false; aimLostFrames = 0
@@ -817,9 +1151,22 @@ lp.CharacterAdded:Connect(function(char)
     Config.Noclip = false
     Config.Magnet = false
     aimTarget = nil; aimLocked = false; aimLostFrames = 0
+    pcall(function()
+        if UpdFuncs then
+            if UpdFuncs.Fly    then UpdFuncs.Fly(false)    end
+            if UpdFuncs.Noclip then UpdFuncs.Noclip(false) end
+            if UpdFuncs.Magnet then UpdFuncs.Magnet(false) end
+        end
+    end)
     task.wait(1)
     local hum = char:FindFirstChildOfClass("Humanoid")
-    if hum then hum.PlatformStand = false; hum.WalkSpeed = 16 end
+    if hum then
+        pcall(function()
+            hum.PlatformStand = false
+            hum.WalkSpeed     = 16
+            hum.JumpPower     = 50
+        end)
+    end
 end)
 
 -- ============================================================
@@ -866,7 +1213,7 @@ HeaderLbl.BackgroundTransparency = 1
 HeaderLbl.TextColor3             = Color3.fromRGB(255, 255, 255)
 HeaderLbl.Font                   = Enum.Font.GothamBlack
 HeaderLbl.TextSize               = IsMobile and 13 or 15
-HeaderLbl.Text                   = "⚡ Markiyan PRO V48" .. (IsMobile and " [MOB]" or "")
+HeaderLbl.Text                   = "⚡ Markiyan PRO V49" .. (IsMobile and " [MOB]" or "")
 
 local CloseBtn = Instance.new("TextButton", Header)
 CloseBtn.Size             = UDim2.new(0, 28, 0, 28)
@@ -1048,7 +1395,9 @@ local ActiveTab  = nil
 local function ShowTab(name)
     ActiveTab = name
     for n, frames in pairs(Sections) do
-        for _, f in pairs(frames) do f.Visible = (n == name) end
+        for _, f in pairs(frames) do
+            pcall(function() f.Visible = (n == name) end)
+        end
     end
     for n, btn in pairs(TabButtons) do
         if n == name then
@@ -1198,6 +1547,7 @@ local function AddToggle(tabName, name, key, cbOn, cbOff)
         if key == "AimActive" and not Config[key] then
             aimTarget = nil; aimLocked = false; aimLostFrames = 0
         end
+        if key == "ESP" and not Config[key] then ClearAllESP() end
         Notify(name, Config[key] and "ON ✓" or "OFF ✗", 1.5)
     end)
     return Upd
@@ -1553,7 +1903,7 @@ end
 -- START
 -- ============================================================
 ShowTab("Combat")
-Notify("Markiyan PRO V48",
+Notify("Markiyan PRO V49",
     IsMobile
-        and "📱 Mobile | M=меню | FOV ✓"
-        or  "M=меню | G=aim | F=fly | V=noclip ✓",4)
+        and "📱 Mobile | M=меню | Priority: Printer/Candy/Balloon ✓"
+        or  "M=меню | G=aim | F=fly | V=noclip | Priority loot ✓", 4)
