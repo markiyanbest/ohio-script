@@ -311,6 +311,7 @@ local BlacklistCache = {
     ["requires"]=true,
     ["locked until"]=true,
     ["need cash"]=true,
+    ["coffee"]=true,
     ["purchase"]=true,
     ["buy to"]=true,
     ["buy for"]=true,
