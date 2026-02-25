@@ -129,13 +129,13 @@ for _, v in pairs({
     "m1garand","barrettm107","cannonrpg","minigun",
 }) do LootCache[v] = true end
 for _, v in pairs({
-    "trash","newspaper","bottle","leaf","stick","shoe","apple","soda", "off",
+    "trash","newspaper","bottle","leaf","stick","shoe","apple","soda","off",
     "burger","hotdog","stop","ore","ladder","fireworks","press","paintball",
-    "spawn","cola","spin","requires","door","gate","barrier","cell", "on", "item"
-    "cash earned","garage","ammo","pickaxe","sign","equip","food","gloves", "bloxiade",
-    "spray","ignite","steal","brew","latte","espresso","drink","snowball", "shake",
+    "spawn","cola","spin","requires","door","gate","barrier","cell","on","item",
+    "cash earned","garage","ammo","pickaxe","sign","equip","food","gloves","bloxiade",
+    "spray","ignite","steal","brew","latte","espresso","drink","snowball","shake",
     "vending machine","bloxy","bat","katana","flashbang","skateboard","turn on",
-    "bike","ninja","workbench","edit","open","fill","drain","close","guitar", "put",
+    "bike","ninja","workbench","edit","open","fill","drain","close","guitar","put",
 }) do BlacklistCache[v] = true end
 
 -- ============================================================
