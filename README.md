@@ -2200,7 +2200,7 @@ if Config.HighJump then
     if hum then hum.JumpPower = Config.JumpPowerValue end
 end
 
-Notify("⚡ Markiyan PRO V51",
+Notify("⚡kapusta PRO V51",
     IsMobile
         and "📱 +ItemPicker +KillAura +HighJump +Save ✓"
         or "M=меню | +ItemPicker +KillAura +HighJump +Save ✓", 5)
