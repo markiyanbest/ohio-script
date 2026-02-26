@@ -181,7 +181,7 @@ local HARDBLOCK_NAMES = {
 
 local DOOR_ACTION_BLOCKS = {
     "requires lockpick","requires keycard","requires key card",
-    "requires key","requires level","requires police","requires military",
+    "requires key","requires level","requires police","requires military","rent"
     "need lockpick","need keycard","need key card","need key",
     "use lockpick","use keycard","use key card",
     "insert keycard","insert key card","insert key","insert card",
