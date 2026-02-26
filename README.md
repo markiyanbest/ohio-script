@@ -1,4 +1,4 @@
--- markiyanbest's script (V51.5 - PICKER FIX + MANAGE HOUSE)
+-- markiyanbest's script (V51.6 - +5 CRAFT ITEMS)
 local Players = game:GetService("Players")
 local lp = Players.LocalPlayer
 local RS = game:GetService("RunService")
@@ -54,6 +54,7 @@ local COORDS = {
 }
 
 local ALL_ITEMS = {
+    -- WEAPONS
     "Acid Gun","Admin AK-47","Admin Nuke","Admin RPG","AK-47","AR-15",
     "AS VAL","AUG","Barrett M107","Baseball Bat","Baton","Brass Knuckles",
     "C4","Clown Mallet","Crowbar","Deagle","Double barrel","Dragunov",
@@ -64,32 +65,41 @@ local ALL_ITEMS = {
     "Mossberg","MP7","Pepper Spray","Python","Raygun","Riot Shield",
     "RPG","RPK","Saber","Saiga 12","Sawn off","Smoke grenade",
     "Spectral Scythe","Spiked baseball bat","Suitcase Nuke","USP 45","Uzi",
+    -- ARMOR / MEDICAL
     "Bandage","Heavy Vest","Light vest","Medium Vest","Medkit",
     "Military Vest","Stretcher","Surgeon Mask","X-Ray Goggles",
+    -- MONEY / VALUABLES
     "ATM","Cash Register","Gems","Money printer","Unusual Money Printer",
     "Safes","Slot machine","Wallet",
+    -- FOOD / DRINKS
     "Apple","Banana","Banana Peel","Beans","Bloxaide","Bloxy Cola",
     "Burger","Cake","Candy Cane","Chicken","Choco Bunny","Chocolates",
     "Coffee","Cookie","Cotton Candy","Diamond Taco","Donut","Hotdog",
     "Pizza","Rose",
+    -- TOOLS / UTILITY
     "Airdrop Marker","Airstrike","Armored Truck","Component Boxes",
     "Crafting table","Drone","Easter Basket","Gold Lucky Block",
     "Green Lucky Block","Large Present","Locker","Lockpick",
     "Orange Lucky Block","Presents","Purple Lucky Block","Red Lucky Block",
     "Small Present",
+    -- MISC ITEMS
     "Dumbell","Festive Guitar","Flashlight","Grocery Cart","Guitar",
     "Hoverboard","Maraca","Megaphone","Shopping Cart","Sign",
     "Skateboard","Stagecoach","Stop Sign",
+    -- SEASONAL / FUN
     "4th of July Hat","Balloon","Basketball","Beach Ball","Bear Trap",
     "Clover Balloon","Clown","Firework","Firework Cake","Firework Cone",
     "Firework Mortar","Green Firework","Heart Balloon","Hockey Mask",
     "July 4th Firework","Pink Firework","Roman Candle","Sombrero Hat",
     "Sparkler",
+    -- GANG / RARE
     "Black Bandana","Blue Bandana","Blue Gloves","Red Bandana","Red Gloves",
     "Blue Candy Cane","Cruiser Keys","Dollar Balloon",
     "Golden Clover Balloon","Helicopter Keys","Kunai",
     "Military Keycard","Mustang Keys","Night Vision Goggles",
     "Nuke Launcher","Police Keycard","SPAS-12",
+    -- V51.6: CRAFTING / COMPONENTS
+    "Weapon Parts","Explosives Scrap","Materials","Electronics","Medical Supplies",
 }
 
 local ALL_ITEMS_LOOKUP = {}
@@ -163,7 +173,7 @@ end
 task.spawn(function() while task.wait(15) do SaveSettings(Config, ItemPickerState) end end)
 
 -- ============================================================
--- BLACKLIST V51.5
+-- BLACKLIST V51.6
 -- ============================================================
 local HARDBLOCK_NAMES = {
     ["door"]=true,["doors"]=true,["gate"]=true,["gates"]=true,
@@ -174,21 +184,19 @@ local HARDBLOCK_NAMES = {
     ["cell door"]=true,["prison door"]=true,["jail door"]=true,
     ["garage door"]=true,["security door"]=true,["access door"]=true,
     ["panel"]=true,["access panel"]=true,
-    -- V51.5 додано:
     ["manage house"]=true,["house"]=true,["manage"]=true,
     ["property"]=true,["apartment"]=true,["condo"]=true,
 }
 
 local DOOR_ACTION_BLOCKS = {
     "requires lockpick","requires keycard","requires key card",
-    "requires key","requires level","requires police","requires military","rent"
+    "requires key","requires level","requires police","requires military",
     "need lockpick","need keycard","need key card","need key",
     "use lockpick","use keycard","use key card",
     "insert keycard","insert key card","insert key","insert card",
     "swipe card","swipe keycard","swipe key card",
     "unlock with","open with","locked",
     "unlock door","open door","close door","lock door",
-    -- V51.5 додано:
     "manage house","manage property","open house","close house",
     "open gate","close gate","open entrance",
     "open","close",
@@ -255,7 +263,6 @@ local BLACKLIST_EXACT = {
     ["equip"]=true,["unequip"]=true,["drop"]=true,
     ["destroy"]=true,["delete"]=true,["remove"]=true,
     ["place"]=true,["build"]=true,["blueprint"]=true,["recipe"]=true,
-    -- V51.5 додано:
     ["manage"]=true,["manage house"]=true,["house"]=true,
     ["property"]=true,["apartment"]=true,["condo"]=true,
     ["rent"]=true,["lease"]=true,["mortgage"]=true,
@@ -278,7 +285,6 @@ local BLACKLIST_PATTERNS = {
     "need%s+key%s*card","use%s+lockpick","use%s+keycard",
     "insert%s+key","insert%s+card","swipe%s+card",
     "swipe%s+keycard","unlock%s+with","open%s+with",
-    -- V51.5:
     "manage%s+house","manage%s+property","open%s+house",
 }
 
@@ -322,8 +328,7 @@ local function IsTargetAlive(t)
 end
 
 -- ============================================================
--- [FIX V51.5] ITEM PICKER — строга перевірка
--- Тепер якщо предмет ВИМКНЕНИЙ (✗) — він 100% НЕ підбирається
+-- ITEM PICKER — строга перевірка
 -- ============================================================
 local function IsWhitelisted(text)
     if WHITELIST_FORCE[text] then return true end
@@ -348,18 +353,12 @@ local function IsBlocked(text)
     return false
 end
 
--- [FIX V51.5] Строга перевірка Item Picker
--- Повертає: matchedItem (string або nil), enabled (bool)
 local function CheckItemPicker(parentName)
     local pLow = parentName:lower()
-
-    -- 1. Точний збіг
     if ALL_ITEMS_LOOKUP[pLow] then
         local origName = ALL_ITEMS_LOOKUP[pLow]
         return origName, (ItemPickerState[origName] == true)
     end
-
-    -- 2. Частковий збіг — знайти НАЙДОВШИЙ збіг
     local bestMatch = nil
     local bestLen = 0
     for itemLow, itemOriginal in pairs(ALL_ITEMS_LOOKUP) do
@@ -372,12 +371,10 @@ local function CheckItemPicker(parentName)
             end
         end
     end
-
     if bestMatch then
         return bestMatch, (ItemPickerState[bestMatch] == true)
     end
-
-    return nil, true -- невідомий предмет = дозволити
+    return nil, true
 end
 
 local function IsValidLootPrompt(prompt)
@@ -391,17 +388,14 @@ local function IsValidLootPrompt(prompt)
     local objectText = (prompt.ObjectText or ""):lower()
     local fullText = pLow .. " " .. actionText .. " " .. objectText
 
-    -- КРОК 0: Хардблок назв
     if HARDBLOCK_NAMES[pLow] then return false end
 
-    -- Батько містить door/gate/vault/house/manage
     if not ALL_ITEMS_LOOKUP[pLow] then
         for _, dk in pairs(DOOR_ANCESTOR_KW) do
             if pLow:find(dk, 1, true) then return false end
         end
     end
 
-    -- КРОК 1: ActionText/ObjectText дверні фрази
     for _, phrase in pairs(DOOR_ACTION_BLOCKS) do
         if actionText:find(phrase, 1, true) then return false end
         if objectText:find(phrase, 1, true) then return false end
@@ -411,7 +405,6 @@ local function IsValidLootPrompt(prompt)
         end
     end
 
-    -- КРОК 2: Предки
     if not ALL_ITEMS_LOOKUP[pLow] then
         local ancestor = par.Parent
         for i = 1, 4 do
@@ -435,19 +428,16 @@ local function IsValidLootPrompt(prompt)
         end
     end
 
-    -- [FIX V51.5] КРОК 3: Item Picker — СТРОГА перевірка
-    -- Перевіряємо і по імені батька, і по fullText
     local matchedItem, isEnabled = CheckItemPicker(parentName)
     if matchedItem and not isEnabled then
-        return false -- предмет ВИМКНЕНИЙ в picker
+        return false
     end
 
-    -- Також перевірити fullText на збіг з вимкненими предметами
     if not matchedItem then
         for itemLow, itemOriginal in pairs(ALL_ITEMS_LOOKUP) do
             if #itemLow >= 4 and fullText:find(itemLow, 1, true) then
                 if ItemPickerState[itemOriginal] == false then
-                    return false -- знайшли вимкнений предмет в тексті
+                    return false
                 end
                 matchedItem = itemOriginal
                 isEnabled = true
@@ -456,10 +446,8 @@ local function IsValidLootPrompt(prompt)
         end
     end
 
-    -- КРОК 4: Точний збіг ALL_ITEMS
     if ALL_ITEMS_LOOKUP[pLow] then return true end
 
-    -- КРОК 5: Погані дії
     local badActions = {
         "open","close","lock","unlock","enter","exit",
         "drive","ride","sit","get in","get out","start",
@@ -474,14 +462,11 @@ local function IsValidLootPrompt(prompt)
         end
     end
 
-    -- КРОК 6: Загальний blacklist
     if IsBlocked(fullText) then return false end
 
-    -- КРОК 7: Частковий збіг ALL_ITEMS
     for itemLow, itemOriginal in pairs(ALL_ITEMS_LOOKUP) do
         if #itemLow >= 3 then
             if pLow:find(itemLow, 1, true) or fullText:find(itemLow, 1, true) then
-                -- Ще раз перевірити picker!
                 if ItemPickerState[itemOriginal] == false then
                     return false
                 end
@@ -846,7 +831,7 @@ local Main=Instance.new("Frame",SG); Main.Size=UDim2.new(0,MW,0,MH); Main.Anchor
 
 local Header=Instance.new("Frame",Main); Header.Size=UDim2.new(1,0,0,40); Header.BackgroundColor3=Color3.fromRGB(10,10,20); Header.BorderSizePixel=0; Instance.new("UICorner",Header)
 Instance.new("UIGradient",Header).Color=ColorSequence.new({ColorSequenceKeypoint.new(0,Color3.fromRGB(0,50,180)),ColorSequenceKeypoint.new(0.5,Color3.fromRGB(0,130,255)),ColorSequenceKeypoint.new(1,Color3.fromRGB(0,50,180))})
-local HL=Instance.new("TextLabel",Header); HL.Size=UDim2.new(1,-50,1,0); HL.Position=UDim2.new(0,8,0,0); HL.BackgroundTransparency=1; HL.TextColor3=Color3.fromRGB(255,255,255); HL.Font=Enum.Font.GothamBlack; HL.TextSize=IsMobile and 12 or 14; HL.TextXAlignment=Enum.TextXAlignment.Left; HL.Text="⚡ V51.5"..(IsMobile and " [M]" or "")
+local HL=Instance.new("TextLabel",Header); HL.Size=UDim2.new(1,-50,1,0); HL.Position=UDim2.new(0,8,0,0); HL.BackgroundTransparency=1; HL.TextColor3=Color3.fromRGB(255,255,255); HL.Font=Enum.Font.GothamBlack; HL.TextSize=IsMobile and 12 or 14; HL.TextXAlignment=Enum.TextXAlignment.Left; HL.Text="⚡ V51.6"..(IsMobile and " [M]" or "")
 local CB=Instance.new("TextButton",Header); CB.Size=UDim2.new(0,26,0,26); CB.Position=UDim2.new(1,-34,0,7); CB.BackgroundColor3=Color3.fromRGB(180,30,30); CB.Text="✕"; CB.TextColor3=Color3.fromRGB(255,255,255); CB.Font=Enum.Font.GothamBold; CB.TextSize=12; CB.BorderSizePixel=0; CB.ZIndex=5; Instance.new("UICorner",CB).CornerRadius=UDim.new(0,6); CB.MouseButton1Click:Connect(function() Main.Visible=false end)
 
 local TabBar=Instance.new("Frame",Main); TabBar.Size=UDim2.new(1,-8,0,28); TabBar.Position=UDim2.new(0,4,0,44); TabBar.BackgroundColor3=Color3.fromRGB(12,12,20); TabBar.BorderSizePixel=0; Instance.new("UICorner",TabBar)
@@ -937,8 +922,8 @@ AddToggle("Misc","FPS BOOST","FPSBoost",function() ApplyFPS() end)
 AddCategory("Misc","UTILITIES"); AddToggle("Misc","ANTI-SEAT","AntiSeat"); AddToggle("Misc","ANTI-AFK","AntiAFK")
 AddCategory("Misc","ACTIONS"); AddAction("Misc","🏦 ROB BANK",Color3.fromRGB(150,20,20),StartRobbery)
 
--- ITEMS TAB
-AddCategory("Items","ITEM PICKER (162)")
+-- ITEMS TAB (167 items)
+AddCategory("Items","ITEM PICKER (167)")
 local iIF=Instance.new("Frame",Scroll); iIF.Size=UDim2.new(0.97,0,0,IsMobile and 36 or 28); iIF.BackgroundColor3=Color3.fromRGB(12,12,22); iIF.BorderSizePixel=0; iIF.Visible=false; Instance.new("UICorner",iIF); table.insert(Sections["Items"],iIF)
 local iIL=Instance.new("TextLabel",iIF); iIL.Size=UDim2.new(1,0,1,0); iIL.BackgroundTransparency=1; iIL.TextColor3=Color3.fromRGB(120,160,255); iIL.Font=Enum.Font.Gotham; iIL.TextSize=IsMobile and 9 or 10; iIL.TextWrapped=true; iIL.Text="🔍 ✓=збирає ✗=ігнорує"
 
@@ -1002,4 +987,4 @@ ShowTab("Combat")
 if Config.Fullbright then task.spawn(EnableFB) end
 if Config.FPSBoost then task.spawn(ApplyFPS) end
 if Config.HighJump then local h=GetHum();if h then h.JumpPower=Config.JumpPowerValue end end
-Notify("⚡ V51.5",IsMobile and "📱 PickerFix+DoorFix ✓" or "M=меню | PickerFix ✓",5)
+Notify("⚡ V51.6",IsMobile and "📱 167 items ✓" or "M=меню | 167 items ✓",5)
