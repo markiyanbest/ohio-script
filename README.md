@@ -164,6 +164,38 @@ for _, item in pairs(ALL_ITEMS) do
 	ALL_ITEMS_LOOKUP[item:lower()] = item
 end
 
+local EXTRA_NAMES = {
+	["military key card"] = "Military Key Card",
+	["military keycard"] = "Military Key Card",
+	["police key card"] = "Police Key Card",
+	["police keycard"] = "Police Key Card",
+	["clover balloon"] = "Clover Balloon",
+	["golden clover balloon"] = "Golden Clover Balloon",
+	["money balloon"] = "Money Balloon",
+	["heart balloon"] = "Heart Balloon",
+	["dollar balloon"] = "Dollar Balloon",
+	["gold ak-47"] = "Gold AK-47",
+	["gold deagle"] = "Gold Deagle",
+	["green firework"] = "Green Firework",
+	["pink firework"] = "Pink Firework",
+	["sparkler"] = "Sparkler",
+	["diamond glock"] = "Diamond Glock",
+	["golden deagle"] = "Gold Deagle",
+	["candy cane"] = "Candy Cane",
+	["blue candy cane"] = "Blue Candy Cane",
+	["money printer"] = "Money printer",
+	["nuke launcher"] = "Nuke Launcher",
+	["mustang keys"] = "Mustang Keys",
+	["helicopter keys"] = "Helicopter Keys",
+	["cruiser keys"] = "Cruiser Keys",
+	["airdrop marker"] = "Airdrop Marker",
+	["suitcase nuke"] = "Suitcase Nuke",
+	["unusual money printer"] = "Unusual Money Printer",
+}
+for k, v in pairs(EXTRA_NAMES) do
+	if not ALL_ITEMS_LOOKUP[k] then ALL_ITEMS_LOOKUP[k] = v end
+end
+
 local SKIN_PREFIXES = {
 	"void","solid gold","cyberpunk","diamond","ruby","amethyst","sapphire",
 	"emerald","nature","water","flame","tactical","future white","future black",
@@ -189,29 +221,12 @@ local function IsGunSkin(name)
 	return false
 end
 
-local PriorityLoot = {
-	["money printer"]=true,["unusual money printer"]=true,
-	["money balloon"]=true,["dollar balloon"]=true,
-	["clover balloon"]=true,["golden clover balloon"]=true,
-	["heart balloon"]=true,["mustang keys"]=true,
-	["helicopter keys"]=true,["cruiser keys"]=true,
-	["military keycard"]=true,["military key card"]=true,
-	["police keycard"]=true,["police key card"]=true,
-	["gold ak-47"]=true,["gold deagle"]=true,
-	["diamond glock"]=true,["admin ak-47"]=true,
-	["admin rpg"]=true,["admin nuke"]=true,
-	["suitcase nuke"]=true,["nuke launcher"]=true,
-	["raygun"]=true,["barrett m107"]=true,
-	["spectral scythe"]=true,["spas-12"]=true,
-	["kunai"]=true,["diamond taco"]=true,
-	["airdrop marker"]=true,["x-ray goggles"]=true,
-	["night vision goggles"]=true,["lockpick"]=true,
-	["candy cane"]=true,["blue candy cane"]=true,
-	["sparkler"]=true,["green firework"]=true,
-	["pink firework"]=true,["gems"]=true,["safes"]=true,
-}
+local PriorityLoot = {}
 for _, item in pairs(ALL_ITEMS) do
-	if IsGunSkin(item) then PriorityLoot[item:lower()] = true end
+	PriorityLoot[item:lower()] = true
+end
+for k, _ in pairs(EXTRA_NAMES) do
+	PriorityLoot[k] = true
 end
 
 local SAVE_KEY = "MarkiyanProV64_Settings"
@@ -347,6 +362,13 @@ local BLACKLIST_WORDS = {
 	"atm machine","deposit","withdraw","bank terminal",
 }
 
+local ALLOWED_ACTIONS = {
+	["collect"]=true,["grab"]=true,["pick up"]=true,["pickup"]=true,
+	["take"]=true,["loot"]=true,["get"]=true,["steal"]=true,
+	["pick"]=true,["acquire"]=true,["gather"]=true,["equip"]=true,
+	[""]=true,["e"]=true,
+}
+
 local function IsItemEnabled(itemName)
 	if not itemName then return false end
 	if ItemPickerState[itemName] ~= nil then return ItemPickerState[itemName] end
@@ -365,55 +387,84 @@ local function IsBlacklistedText(text)
 	return false
 end
 
-local function IsValidLootPrompt(prompt)
-	if not prompt or not prompt.Parent then return false end
-	local enabled = false
-	pcall(function() enabled = prompt.Enabled end)
-	if not enabled then return false end
-	local kbKey = nil
-	pcall(function() kbKey = prompt.KeyboardKeyCode end)
-	if kbKey == Enum.KeyCode.F then return false end
-	local par = prompt.Parent
-	if not par then return false end
-	if IsInsidePlayerCharacter(par) then return false end
-	local parentName = ""
-	pcall(function() parentName = par.Name or "" end)
-	local pLow = parentName:lower():gsub("^%s+",""):gsub("%s+$","")
-	local actionText = ""
-	pcall(function() actionText = (prompt.ActionText or ""):lower():gsub("^%s+",""):gsub("%s+$","") end)
-	local objectText = ""
-	pcall(function() objectText = (prompt.ObjectText or ""):lower():gsub("^%s+",""):gsub("%s+$","") end)
-	if BLACKLIST_ACTIONS[actionText] then return false end
-	if IsBlacklistedText(pLow) then return false end
-	if IsBlacklistedText(actionText) then return false end
-	if IsBlacklistedText(objectText) then return false end
-	pcall(function()
-		if par.Parent then
-			local gpName = par.Parent.Name:lower()
-			if IsBlacklistedText(gpName) then enabled = false end
-			if par.Parent:FindFirstChildOfClass("Humanoid") then enabled = false end
-		end
-	end)
-	if not enabled then return false end
-	local matchedItem = ALL_ITEMS_LOOKUP[pLow]
-	if not matchedItem and objectText ~= "" then
-		matchedItem = ALL_ITEMS_LOOKUP[objectText]
-	end
-	if not matchedItem and IsGunSkin(pLow) then matchedItem = parentName end
-	if not matchedItem and objectText ~= "" and IsGunSkin(objectText) then matchedItem = objectText end
-	if not matchedItem then return false end
-	if not IsItemEnabled(matchedItem) then return false end
-	if actionText == "" or actionText == "e" then return true end
-	local ALLOWED_ACTIONS = {
-		["collect"]=true,["grab"]=true,["pick up"]=true,["pickup"]=true,
-		["take"]=true,["loot"]=true,["get"]=true,["steal"]=true,
-		["pick"]=true,["acquire"]=true,["gather"]=true,["equip"]=true,
-	}
-	if ALLOWED_ACTIONS[actionText] then return true end
+local function FindItemName(parentName, objectText)
+	local pLow = (parentName or ""):lower():gsub("^%s+",""):gsub("%s+$","")
+	local oLow = (objectText or ""):lower():gsub("^%s+",""):gsub("%s+$","")
+	if ALL_ITEMS_LOOKUP[pLow] then return ALL_ITEMS_LOOKUP[pLow] end
+	if oLow ~= "" and ALL_ITEMS_LOOKUP[oLow] then return ALL_ITEMS_LOOKUP[oLow] end
+	if IsGunSkin(pLow) then return parentName end
+	if oLow ~= "" and IsGunSkin(oLow) then return objectText end
+	return nil
+end
+
+local function IsActionAllowed(actionText)
+	local al = (actionText or ""):lower():gsub("^%s+",""):gsub("%s+$","")
+	if ALLOWED_ACTIONS[al] then return true end
+	if BLACKLIST_ACTIONS[al] then return false end
 	for act in pairs(ALLOWED_ACTIONS) do
-		if actionText:find(act, 1, true) then return true end
+		if act ~= "" and act ~= "e" and al:find(act, 1, true) then return true end
 	end
 	return false
+end
+
+-- Швидка перевірка промпту без зайвих затримок
+local function QuickCheckPrompt(prompt)
+	if not prompt or not prompt.Parent then return false, nil end
+	local en = false
+	pcall(function() en = prompt.Enabled end)
+	if not en then return false, nil end
+	local kbKey = nil
+	pcall(function() kbKey = prompt.KeyboardKeyCode end)
+	if kbKey == Enum.KeyCode.F then return false, nil end
+	local par = prompt.Parent
+	if not par then return false, nil end
+
+	local parentName = ""
+	pcall(function() parentName = par.Name or "" end)
+	local actionText = ""
+	pcall(function() actionText = (prompt.ActionText or "") end)
+	local objectText = ""
+	pcall(function() objectText = (prompt.ObjectText or "") end)
+
+	local aLow = actionText:lower():gsub("^%s+",""):gsub("%s+$","")
+	local pLow = parentName:lower():gsub("^%s+",""):gsub("%s+$","")
+
+	if BLACKLIST_ACTIONS[aLow] then return false, nil end
+	if IsBlacklistedText(pLow) then return false, nil end
+	if IsBlacklistedText(aLow) then return false, nil end
+
+	local parentBlacklisted = false
+	pcall(function()
+		if par.Parent then
+			if par.Parent:FindFirstChildOfClass("Humanoid") then parentBlacklisted = true end
+		end
+	end)
+	if parentBlacklisted then return false, nil end
+
+	if IsInsidePlayerCharacter(par) then return false, nil end
+
+	local matchedItem = FindItemName(parentName, objectText)
+	if not matchedItem then return false, nil end
+	if not IsItemEnabled(matchedItem) then return false, nil end
+	if not IsActionAllowed(aLow) then return false, nil end
+
+	return true, matchedItem
+end
+
+local function GetPromptPosition(prompt)
+	local pos = nil
+	pcall(function()
+		local par = prompt.Parent
+		if par then
+			if par:IsA("BasePart") then pos = par.Position
+			elseif par:IsA("Model") then pos = par:GetPivot().Position
+			else
+				local pp = par:FindFirstChildWhichIsA("BasePart")
+				if pp then pos = pp.Position end
+			end
+		end
+	end)
+	return pos
 end
 
 local function SafeFirePrompt(prompt)
@@ -425,27 +476,22 @@ local function SafeFirePrompt(prompt)
 		local ok = pcall(fireproximityprompt, prompt)
 		if ok then return true end
 	end
-	local holdTime = 0.5
-	pcall(function() holdTime = math.max(prompt.HoldDuration or 0, 0.1) + 0.15 end)
-	local ok2 = pcall(function()
-		prompt:InputHoldBegin()
-		task.wait(holdTime)
-		prompt:InputHoldEnd()
-	end)
-	if not ok2 then
+	local holdTime = 0
+	pcall(function() holdTime = math.max(prompt.HoldDuration or 0, 0) end)
+	if holdTime > 0 then
 		pcall(function()
 			prompt:InputHoldBegin()
-			task.wait(0.8)
+			task.wait(holdTime + 0.1)
+			prompt:InputHoldEnd()
+		end)
+	else
+		pcall(function()
+			prompt:InputHoldBegin()
+			task.wait(0.05)
 			prompt:InputHoldEnd()
 		end)
 	end
 	return true
-end
-
-local function IsPriority(pLow)
-	if PriorityLoot[pLow] then return true end
-	if IsGunSkin(pLow) then return true end
-	return false
 end
 
 local aimTarget = nil
@@ -807,96 +853,174 @@ end
 local farmRunning = false
 local farmStats = {collected = 0, skipped = 0, lastItem = ""}
 
-local function GetPromptPosition(prompt)
-	local pos = nil
-	pcall(function()
-		local par = prompt.Parent
-		if par then
-			if par:IsA("BasePart") then pos = par.Position
-			elseif par:IsA("Model") then pos = par:GetPivot().Position
-			else local pp = par:FindFirstChildWhichIsA("BasePart"); if pp then pos = pp.Position end end
-		end
-	end)
-	return pos
-end
-
-local function CollectPrompt(prompt, itemName)
-	if not prompt or not prompt.Parent then return false end
-	local en = false; pcall(function() en = prompt.Enabled end)
-	if not en then return false end
-	local kbKey = nil; pcall(function() kbKey = prompt.KeyboardKeyCode end)
-	if kbKey == Enum.KeyCode.F then return false end
-	local pos = GetPromptPosition(prompt)
-	if not pos or pos.Magnitude < 0.5 then return false end
-	if not IsHumAlive() then return false end
-	local root = GetRoot(); if not root then return false end
-	if IsInsidePlayerCharacter(prompt.Parent) then return false end
-	local dist = (root.Position - pos).Magnitude
-	if dist > 15 then
-		SafeTeleport(pos)
-		task.wait(IsMobile and 0.4 or 0.25)
-	else
-		pcall(function() root.CFrame = CFrame.new(pos + Vector3.new(0, 1, 0)) end)
-		task.wait(IsMobile and 0.2 or 0.1)
-	end
-	if not prompt or not prompt.Parent then return false end
-	local ok = SafeFirePrompt(prompt)
-	if ok then
-		farmStats.collected = farmStats.collected + 1
-		farmStats.lastItem = itemName or "?"
-	end
-	task.wait(IsMobile and 0.3 or 0.15)
-	return ok
-end
-
+-- ================================================================
+-- НОВИЙ АВТО ФАРМ: без лагів, миттєве переключення між предметами
+-- ================================================================
 task.spawn(function()
+	-- Кеш відмовлених промптів щоб не намагатись знову
+	local failedPrompts = {}
+	local FAIL_TIMEOUT = 4 -- секунди після яких спробуємо знову
+
 	while true do
-		task.wait(IsMobile and 0.8 or 0.4)
-		if not Config.Farm then farmRunning = false; continue end
-		if farmRunning then continue end
-		if not IsHumAlive() then task.wait(2); continue end
+		task.wait(0.05) -- мінімальна затримка між ітераціями
+
+		if not Config.Farm then
+			farmRunning = false
+			failedPrompts = {}
+			task.wait(0.5)
+			continue
+		end
+
+		if not IsHumAlive() then
+			task.wait(1)
+			continue
+		end
+
 		farmRunning = true
-		local success = pcall(function()
-			local root = GetRoot()
-			if not root then farmRunning = false; return end
-			local priorityPrompts = {}
-			local normalPrompts = {}
-			for _, v in pairs(workspace:GetDescendants()) do
-				if not Config.Farm then break end
-				if not v:IsA("ProximityPrompt") then continue end
-				local en = false; pcall(function() en = v.Enabled end)
-				if not en then continue end
-				if not IsValidLootPrompt(v) then
-					farmStats.skipped = farmStats.skipped + 1
-					continue
-				end
-				local pos = GetPromptPosition(v)
-				if not pos or pos.Magnitude < 0.5 then continue end
-				local myRoot = GetRoot(); if not myRoot then break end
-				local dist = (myRoot.Position - pos).Magnitude
-				if dist > (Config.FarmRange or 900) then continue end
-				local itemName = ""
-				pcall(function() itemName = v.Parent.Name or "" end)
-				local pLow = itemName:lower()
-				if IsPriority(pLow) then
-					table.insert(priorityPrompts, {prompt = v, name = itemName, pos = pos, dist = dist})
+		local root = GetRoot()
+		if not root then task.wait(0.5); continue end
+
+		-- Збираємо всі валідні промпти одним проходом (без yield)
+		local priorityList = {}
+		local normalList = {}
+		local now = tick()
+
+		-- Очищаємо старі записи про невдачі
+		for k, t in pairs(failedPrompts) do
+			if now - t > FAIL_TIMEOUT then failedPrompts[k] = nil end
+		end
+
+		for _, v in pairs(workspace:GetDescendants()) do
+			if not v:IsA("ProximityPrompt") then continue end
+
+			-- Пропускаємо якщо нещодавно не вдалося
+			local uid = tostring(v)
+			if failedPrompts[uid] then continue end
+
+			local ok, matchedItem = QuickCheckPrompt(v)
+			if not ok or not matchedItem then continue end
+
+			local pos = GetPromptPosition(v)
+			if not pos then continue end
+
+			local dist = (root.Position - pos).Magnitude
+			if dist > (Config.FarmRange or 900) then continue end
+
+			local entry = {prompt = v, name = matchedItem, pos = pos, dist = dist, uid = uid}
+
+			local iLow = matchedItem:lower()
+			if PriorityLoot[iLow] or IsGunSkin(iLow) then
+				table.insert(priorityList, entry)
+			else
+				table.insert(normalList, entry)
+			end
+		end
+
+		-- Сортуємо за відстанню
+		table.sort(priorityList, function(a, b) return a.dist < b.dist end)
+		table.sort(normalList, function(a, b) return a.dist < b.dist end)
+
+		-- Об'єднуємо: спочатку пріоритет, потім решта
+		local allEntries = {}
+		for _, e in ipairs(priorityList) do table.insert(allEntries, e) end
+		for _, e in ipairs(normalList) do table.insert(allEntries, e) end
+
+		if #allEntries == 0 then
+			task.wait(0.5)
+			continue
+		end
+
+		-- Обробляємо кожен предмет окремо з таймаутом
+		for _, entry in ipairs(allEntries) do
+			if not Config.Farm or not IsHumAlive() then break end
+
+			local prompt = entry.prompt
+			if not prompt or not prompt.Parent then continue end
+
+			-- Перевіряємо чи промпт ще валідний
+			local stillOk, _ = QuickCheckPrompt(prompt)
+			if not stillOk then continue end
+
+			local myRoot = GetRoot()
+			if not myRoot then break end
+
+			local pos = entry.pos
+			local dist = (myRoot.Position - pos).Magnitude
+
+			-- Телепортуємося якщо далеко
+			if dist > 12 then
+				SafeTeleport(pos)
+				task.wait(0.15) -- мінімальна затримка після тп
+			else
+				-- Якщо близько просто підходимо
+				pcall(function()
+					myRoot.CFrame = CFrame.new(pos + Vector3.new(0, 1, 0))
+				end)
+				task.wait(0.05)
+			end
+
+			if not Config.Farm or not IsHumAlive() then break end
+
+			-- Перевіряємо ще раз після переміщення
+			if not prompt or not prompt.Parent then continue end
+			local okAfterMove, _ = QuickCheckPrompt(prompt)
+			if not okAfterMove then
+				failedPrompts[entry.uid] = tick()
+				continue
+			end
+
+			-- Визначаємо час утримання промпту
+			local holdTime = 0
+			pcall(function() holdTime = prompt.HoldDuration or 0 end)
+
+			-- Встановлюємо таймаут: якщо holdTime великий — пропускаємо і переходимо далі
+			if holdTime > 3 then
+				-- Занадто довго тримати — позначаємо як невдалий і рухаємось далі
+				failedPrompts[entry.uid] = tick()
+				farmStats.skipped = farmStats.skipped + 1
+				continue
+			end
+
+			-- Виконуємо з таймаутом
+			local collected = false
+			local attemptDone = false
+
+			task.spawn(function()
+				local fireOk = SafeFirePrompt(prompt)
+				if fireOk then
+					collected = true
+					farmStats.collected = farmStats.collected + 1
+					farmStats.lastItem = entry.name
 				else
-					table.insert(normalPrompts, {prompt = v, name = itemName, pos = pos, dist = dist})
+					failedPrompts[entry.uid] = tick()
+					farmStats.skipped = farmStats.skipped + 1
 				end
-			end
-			table.sort(priorityPrompts, function(a, b) return a.dist < b.dist end)
-			table.sort(normalPrompts, function(a, b) return a.dist < b.dist end)
-			for _, entry in ipairs(priorityPrompts) do
+				attemptDone = true
+			end)
+
+			-- Чекаємо завершення але не більше holdTime + 0.5 секунди
+			local maxWait = math.max(holdTime + 0.5, 0.3)
+			local waited = 0
+			local step = 0.05
+			while not attemptDone and waited < maxWait do
+				task.wait(step)
+				waited = waited + step
+				-- Якщо фарм вимкнули або померли — виходимо
 				if not Config.Farm or not IsHumAlive() then break end
-				if entry.prompt and entry.prompt.Parent then CollectPrompt(entry.prompt, entry.name) end
 			end
-			for _, entry in ipairs(normalPrompts) do
-				if not Config.Farm or not IsHumAlive() then break end
-				if entry.prompt and entry.prompt.Parent then CollectPrompt(entry.prompt, entry.name) end
+
+			-- Якщо не завершилось — позначаємо як невдале і ОДРАЗУ переходимо до наступного
+			if not attemptDone then
+				failedPrompts[entry.uid] = tick()
+				farmStats.skipped = farmStats.skipped + 1
 			end
-		end)
-		if not success then task.wait(1) end
+
+			-- Мінімальна пауза між предметами
+			task.wait(0.05)
+		end
+
 		farmRunning = false
+		task.wait(0.1)
 	end
 end)
 
@@ -1749,4 +1873,4 @@ if Config.HighJump then local h = GetHum(); if h then h.UseJumpPower = true; h.J
 if Config.Speed then local h = GetHum(); if h then h.WalkSpeed = Config.WalkSpeedValue end end
 UpdateAllShortcuts(); UpdateFlyBtns()
 
-Notify("⚡ V64", "M=menu | Adaptive UI | Farm fixed ✓", 5)
+Notify("⚡ V64", "NO-LAG FARM ✓ M=menu", 5)
