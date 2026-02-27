@@ -466,9 +466,11 @@ local Config = {
 	ShadowTarget=nil,ShadowDepth=15,AutoSafe=false,SafeHealth=35,
 	SilentAim=false,AimFOV=200,AimSmooth=0.18,AimPart="Head",
 	HighJump=false,JumpPowerValue=80,
+	MoneyFarm=false, -- НОВИЙ: авто-фарм грошей (CashBundle)
 	SC_Aim=IsMobile,SC_Silent=IsMobile,SC_Fly=IsMobile,
 	SC_Noclip=IsMobile,SC_Speed=IsMobile,SC_Farm=IsMobile,
 	SC_Shadow=IsMobile,SC_HighJump=IsMobile,SC_Safe=false,
+	SC_MoneyFarm=IsMobile, -- НОВИЙ shortcut
 	_SafeTP=false,FarmRange=900,
 }
 
@@ -693,14 +695,175 @@ local function SafeFirePrompt(prompt)
 end
 
 -- ============================================================
--- AIM SYSTEM - покращений без зайвого переключення
+-- CASH BUNDLE FARM — окрема функція збору грошей з карти
+-- Телепортується до кожного CashBundle, стрибає/рухається
+-- щоб підібрати (бо просто ТП не завжди зараховує підбір)
+-- ============================================================
+local moneyFarmRunning = false
+local moneyFarmStats = {collected = 0, total = 0}
+
+-- Знаходить всі CashBundle у workspace (пробує кілька шляхів)
+local function GetAllCashBundles()
+	local bundles = {}
+	-- Стандартний шлях
+	local entitiesFolder = workspace:FindFirstChild("Game") and workspace.Game:FindFirstChild("Entities")
+	if entitiesFolder then
+		local cashBundleFolder = entitiesFolder:FindFirstChild("CashBundle")
+		if cashBundleFolder then
+			for _, bundle in ipairs(cashBundleFolder:GetChildren()) do
+				table.insert(bundles, bundle)
+			end
+		end
+	end
+	-- Якщо не знайшло — шукаємо по всьому workspace
+	if #bundles == 0 then
+		for _, obj in pairs(workspace:GetDescendants()) do
+			if obj.Name == "CashBundle" or obj.Name == "Cash" or obj.Name == "MoneyBundle" then
+				if obj:IsA("Model") or obj:IsA("BasePart") then
+					table.insert(bundles, obj)
+				end
+			end
+		end
+	end
+	return bundles
+end
+
+-- Отримує позицію бандла (моделі або парта)
+local function GetBundlePosition(bundle)
+	if not bundle or not bundle.Parent then return nil end
+	if bundle:IsA("BasePart") then return bundle.Position end
+	if bundle:IsA("Model") then
+		local primary = bundle.PrimaryPart
+		if primary then return primary.Position end
+		local firstPart = bundle:FindFirstChildWhichIsA("BasePart")
+		if firstPart then return firstPart.Position end
+	end
+	return nil
+end
+
+-- Основна функція підбору одного бандла:
+-- телепортується, потім стрибає і трохи рухається щоб підібрати
+local function CollectOneCashBundle(bundle)
+	if not bundle or not bundle.Parent then return false end
+	local pos = GetBundlePosition(bundle)
+	if not pos then return false end
+	local root = GetRoot()
+	if not root then return false end
+	-- Телепортуємось прямо на бандл
+	local ok = pcall(function()
+		local char = GetChar()
+		if char then
+			char:PivotTo(CFrame.new(pos + Vector3.new(0, 2.5, 0)))
+		else
+			root.CFrame = CFrame.new(pos + Vector3.new(0, 2.5, 0))
+		end
+	end)
+	if not ok then
+		pcall(function() root.CFrame = CFrame.new(pos + Vector3.new(0, 2.5, 0)) end)
+	end
+	task.wait(0.08)
+	-- Перевіряємо чи бандл ще існує після ТП
+	if not bundle.Parent then return true end -- вже підібрано
+	-- Стрибаємо — це допомагає підібрати через ClickDetector/TouchInterest
+	local hum = GetHum()
+	if hum then
+		pcall(function()
+			hum:ChangeState(Enum.HumanoidStateType.Jumping)
+		end)
+	end
+	task.wait(0.08)
+	-- Додатково рухаємось на кілька сантиметрів у різні сторони
+	-- щоб touch event спрацював якщо потрібен
+	if not bundle.Parent then return true end
+	local offsets = {
+		Vector3.new(0.4, 0, 0),
+		Vector3.new(-0.4, 0, 0),
+		Vector3.new(0, 0, 0.4),
+		Vector3.new(0, 0, -0.4),
+		Vector3.new(0, -0.5, 0),
+	}
+	for _, offset in ipairs(offsets) do
+		if not bundle.Parent then break end
+		if not IsHumAlive() then break end
+		pcall(function()
+			root = GetRoot()
+			if root then root.CFrame = CFrame.new(pos + offset + Vector3.new(0, 2.5, 0)) end
+		end)
+		task.wait(0.05)
+	end
+	-- Якщо є ClickDetector — спрацьовуємо його
+	if bundle.Parent then
+		pcall(function()
+			for _, child in ipairs(bundle:GetDescendants()) do
+				if child:IsA("ClickDetector") then
+					if fireclickdetector then
+						fireclickdetector(child)
+					end
+				end
+			end
+		end)
+	end
+	task.wait(0.05)
+	return true
+end
+
+-- Головний цикл фарму грошей
+task.spawn(function()
+	while true do
+		task.wait(0.1)
+		if not Config.MoneyFarm then
+			moneyFarmRunning = false
+			task.wait(0.5)
+			continue
+		end
+		if not IsHumAlive() then
+			task.wait(1)
+			continue
+		end
+		moneyFarmRunning = true
+		local bundles = GetAllCashBundles()
+		if #bundles == 0 then
+			-- Немає грошей — чекаємо
+			task.wait(2)
+			continue
+		end
+		moneyFarmStats.total = #bundles
+		-- Сортуємо по відстані щоб збирати найближчі перші
+		local root = GetRoot()
+		if root then
+			table.sort(bundles, function(a, b)
+				local posA = GetBundlePosition(a)
+				local posB = GetBundlePosition(b)
+				if not posA then return false end
+				if not posB then return true end
+				return (root.Position - posA).Magnitude < (root.Position - posB).Magnitude
+			end)
+		end
+		for _, bundle in ipairs(bundles) do
+			if not Config.MoneyFarm then break end
+			if not IsHumAlive() then break end
+			if not bundle.Parent then continue end -- вже підібрано кимось
+			local collected = CollectOneCashBundle(bundle)
+			if collected then
+				moneyFarmStats.collected = moneyFarmStats.collected + 1
+			end
+			task.wait(0.05)
+		end
+		moneyFarmRunning = false
+		-- Невелика пауза перед наступним циклом
+		task.wait(1.5)
+	end
+end)
+
+-- ============================================================
+-- AIM SYSTEM
 -- ============================================================
 local aimTarget = nil
 local aimLocked = false
 local aimLastSwitch = 0
-local aimSwitchCD = 0.8 -- збільшено щоб не переключатись часто
+local aimSwitchCD = 0.8
 local aimLostFrames = 0
-local aimLostMax = 60 -- більше фреймів перед втратою цілі
+local aimLostMax = 60
 local lastPing = 0
 local pingTick = 0
 local shadowSavedPos = nil
@@ -726,14 +889,12 @@ local function ScreenDist(part)
 	return (Vector2.new(pos.X, pos.Y) - center).Magnitude
 end
 
--- Перевірка чи ціль видима (не за стіною)
 local function IsVisible(part)
 	if not part then return false end
 	local origin = Camera.CFrame.Position
 	local direction = part.Position - origin
 	local rayParams = RaycastParams.new()
 	rayParams.FilterType = Enum.RaycastFilterType.Exclude
-	-- Виключаємо всіх гравців
 	local excludeList = {}
 	for _, p in pairs(Players:GetPlayers()) do
 		if p.Character then table.insert(excludeList, p.Character) end
@@ -742,7 +903,6 @@ local function IsVisible(part)
 	if myChar then table.insert(excludeList, myChar) end
 	rayParams.FilterDescendantsInstances = excludeList
 	local result = workspace:Raycast(origin, direction, rayParams)
-	-- Якщо промінь нічого не вдарив або вдарив далі цілі — ціль видима
 	if not result then return true end
 	local hitDist = (result.Position - origin).Magnitude
 	local targetDist = direction.Magnitude
@@ -758,7 +918,6 @@ local function FindNewTarget()
 		local h = char:FindFirstChildOfClass("Humanoid")
 		if not h or h.Health <= 0 then continue end
 		local part = FindAimPart(char); if not part then continue end
-		-- Перевіряємо видимість — не наводимо через стіни
 		if not IsVisible(part) then continue end
 		local sd = ScreenDist(part)
 		if sd > fov then continue end
@@ -777,14 +936,11 @@ local function GetBestAimTarget()
 				local part = FindAimPart(char)
 				if part then
 					local sd = ScreenDist(part)
-					-- Тримаємо ціль навіть якщо вона трохи виходить з FOV
 					if sd <= Config.AimFOV * 2.5 then
-						-- Перевіряємо видимість тільки якщо ціль далеко за FOV
 						aimLostFrames = 0
 						return char
 					end
 					aimLostFrames = aimLostFrames + 1
-					-- Більше терпіння перед переключенням
 					if aimLostFrames < aimLostMax then return char end
 				end
 			end
@@ -850,7 +1006,6 @@ local function StartSilentAim()
 	silentActive = true; silentOrigCF = Camera.CFrame
 	local vel = Vector3.zero
 	pcall(function() vel = head.AssemblyLinearVelocity end)
-	-- Мінімальний предікт для silent aim
 	local predPos = head.Position + vel * math.clamp(lastPing, 0.01, 0.08)
 	Camera.CFrame = CFrame.new(Camera.CFrame.Position, predPos)
 end
@@ -875,7 +1030,6 @@ RS.RenderStepped:Connect(function()
 			if head then
 				local vel = Vector3.zero
 				pcall(function() vel = head.AssemblyLinearVelocity end)
-				-- Мінімальний предікт
 				local predPos = head.Position + vel * math.clamp(lastPing, 0.01, 0.08)
 				Camera.CFrame = CFrame.new(Camera.CFrame.Position, predPos)
 			end
@@ -1228,13 +1382,10 @@ RS:BindToRenderStep("MrkAim", 2000, function()
 		local target = GetBestAimTarget()
 		local part = target and FindAimPart(target)
 		if part then
-			-- Мінімальний предікт для аїму (менше ніж раніше)
 			local predTime = math.clamp(lastPing, 0.01, 0.12)
 			local vel = Vector3.zero
 			pcall(function() vel = part.AssemblyLinearVelocity end)
-			-- Обмежуємо горизонтальну швидкість для предікту
 			local horizVel = Vector3.new(vel.X, 0, vel.Z)
-			-- Предікт тільки по горизонталі, без вертикального
 			local predPos = part.Position + horizVel * predTime
 			local smooth = Config.AimSmooth
 			local sd = ScreenDist(part)
@@ -1274,20 +1425,14 @@ RS.Heartbeat:Connect(function(dt)
 			local tR = tChar and tChar:FindFirstChild("HumanoidRootPart")
 			if tR then
 				local depth = Config.ShadowDepth or 15
-				-- Розміщуємо ПРЯМО під ігроком без предікту
-				-- Позиція: точно під HumanoidRootPart на depth вниз
 				local targetPos = tR.Position - Vector3.new(0, depth, 0)
-				-- Напрям погляду цілі (лежачий стан)
 				local lookDir = tR.CFrame.LookVector
 				local flatLook = Vector3.new(lookDir.X, 0, lookDir.Z)
 				if flatLook.Magnitude < 0.1 then flatLook = Vector3.new(1, 0, 0) end
 				flatLook = flatLook.Unit
-				-- Лежачий CFrame: повертаємо на 90 градусів вперед
-				-- CFrame.new(pos, pos+look) дає напрям, потім нахиляємо
 				local lyingCF = CFrame.new(targetPos, targetPos + flatLook) * CFrame.Angles(math.rad(90), 0, 0)
 				pcall(function()
 					root.CFrame = lyingCF
-					-- Копіюємо швидкість цілі щоб не відставати
 					root.AssemblyLinearVelocity = tR.AssemblyLinearVelocity
 					root.AssemblyAngularVelocity = Vector3.zero
 				end)
@@ -1433,6 +1578,39 @@ tI.BorderSizePixel = 0; tI.TextColor3 = Color3.fromRGB(0, 200, 100)
 tI.Font = Enum.Font.GothamBold; tI.TextSize = isSmallScreen and 9 or 11; tI.Text = ""; tI.Visible = false; tI.ZIndex = 12
 Instance.new("UICorner", tI); Instance.new("UIStroke", tI).Color = Color3.fromRGB(40, 40, 58)
 
+-- Статус лейбл для фарму грошей (показується на екрані)
+local moneyFarmStatusLabel = Instance.new("TextLabel", SG)
+moneyFarmStatusLabel.Size = UDim2.new(0, isSmallScreen and 220 or 280, 0, isSmallScreen and 22 or 26)
+moneyFarmStatusLabel.Position = UDim2.new(0.5, isSmallScreen and -110 or -140, 0, isSmallScreen and 40 or 50)
+moneyFarmStatusLabel.BackgroundColor3 = Color3.fromRGB(10, 40, 10)
+moneyFarmStatusLabel.BackgroundTransparency = 0.2
+moneyFarmStatusLabel.BorderSizePixel = 0
+moneyFarmStatusLabel.TextColor3 = Color3.fromRGB(100, 255, 100)
+moneyFarmStatusLabel.Font = Enum.Font.GothamBold
+moneyFarmStatusLabel.TextSize = isSmallScreen and 9 or 11
+moneyFarmStatusLabel.Text = ""
+moneyFarmStatusLabel.Visible = false
+moneyFarmStatusLabel.ZIndex = 15
+Instance.new("UICorner", moneyFarmStatusLabel)
+Instance.new("UIStroke", moneyFarmStatusLabel).Color = Color3.fromRGB(0, 150, 0)
+
+-- Оновлення статус-лейблу фарму грошей
+task.spawn(function()
+	while task.wait(0.5) do
+		if Config.MoneyFarm then
+			local bundles = GetAllCashBundles()
+			moneyFarmStatusLabel.Visible = true
+			moneyFarmStatusLabel.Text = string.format(
+				"💰 MONEY FARM | Зібрано: %d | Бандлів: %d",
+				moneyFarmStats.collected,
+				#bundles
+			)
+		else
+			moneyFarmStatusLabel.Visible = false
+		end
+	end
+end)
+
 local function UpdateFOV()
 	local r = Config.AimFOV
 	fovC.Size = UDim2.new(0, r * 2, 0, r * 2); fovC.Position = UDim2.new(0.5, -r, 0.5, -r)
@@ -1499,6 +1677,8 @@ local ShortcutDefs = {
 	{key = "ShadowMagnet", label = "SHD", scKey = "SC_Shadow", color = Color3.fromRGB(80, 0, 160)},
 	{key = "HighJump", label = "HJP", scKey = "SC_HighJump", color = Color3.fromRGB(0, 180, 180)},
 	{key = "_SafeTP", label = "SAFE", scKey = "SC_Safe", color = Color3.fromRGB(0, 120, 60)},
+	-- НОВИЙ: кнопка фарму грошей
+	{key = "MoneyFarm", label = "💰", scKey = "SC_MoneyFarm", color = Color3.fromRGB(180, 140, 0)},
 }
 
 for _, def in ipairs(ShortcutDefs) do
@@ -1527,6 +1707,10 @@ for _, def in ipairs(ShortcutDefs) do
 			if def.key == "Speed" and not Config.Speed then local h = GetHum(); if h then h.WalkSpeed = 16 end end
 			if def.key == "HighJump" then local h = GetHum(); if h then h.UseJumpPower = true; h.JumpPower = Config.HighJump and Config.JumpPowerValue or 50 end end
 			if def.key == "SilentAim" and not Config.SilentAim then StopSilentAim() end
+			if def.key == "MoneyFarm" then
+				moneyFarmStats.collected = 0
+				Notify("💰 MONEY FARM", Config.MoneyFarm and "ON — Збираємо гроші!" or "OFF", 2)
+			end
 			if UpdFuncs[def.key] then UpdFuncs[def.key](Config[def.key]) end
 			SaveSettings(Config, ItemPickerState)
 		end)
@@ -1602,6 +1786,10 @@ local function AddToggle(tab, name, key, cbOn, cbOff)
 		if key == "ShadowMagnet" then if Config.ShadowMagnet then shadowSavedPos = nil else Config.ShadowTarget = nil end end
 		if key == "Noclip" and not Config.Noclip then RestoreCollision() end
 		if key == "SilentAim" and not Config.SilentAim then StopSilentAim() end
+		if key == "MoneyFarm" then
+			moneyFarmStats.collected = 0
+			Notify("💰 MONEY FARM", Config.MoneyFarm and "ON — Збираємо гроші!" or "OFF", 2)
+		end
 		SaveSettings(Config, ItemPickerState); Notify(name, Config[key] and "ON ✓" or "OFF ✗", 1.5)
 	end)
 	return Upd
@@ -1694,6 +1882,32 @@ AddToggle("Misc", "AUTO HEAL", "Heal")
 AddCategory("Misc", "FARM & VISUALS")
 AddToggle("Misc", "AUTO FARM", "Farm")
 AddSlider("Misc", "FARM RANGE", 50, 2000, Config.FarmRange or 900, "FarmRange")
+-- НОВИЙ ТОГЛ: фарм грошей
+AddCategory("Misc", "💰 MONEY FARM")
+AddToggle("Misc", "💰 AUTO MONEY FARM", "MoneyFarm",
+	function()
+		moneyFarmStats.collected = 0
+		Notify("💰 MONEY FARM", "ON — Збираємо CashBundle!", 3)
+	end,
+	function()
+		Notify("💰 MONEY FARM", "OFF", 2)
+	end
+)
+-- Кнопка одноразового збору всіх грошей
+AddAction("Misc", "💰 COLLECT ALL MONEY NOW", Color3.fromRGB(140, 110, 0), function()
+	if not IsHumAlive() then Notify("💰", "Ти мертвий!", 2); return end
+	Notify("💰 COLLECT", "Збираємо всі гроші...", 3)
+	local bundles = GetAllCashBundles()
+	local count = 0
+	for _, bundle in ipairs(bundles) do
+		if not IsHumAlive() then break end
+		if not bundle.Parent then continue end
+		CollectOneCashBundle(bundle)
+		count = count + 1
+		task.wait(0.05)
+	end
+	Notify("💰 COLLECT", "Зібрано "..count.." бандлів!", 3)
+end)
 AddToggle("Misc", "FULLBRIGHT", "Fullbright", function() EnableFB() end, function() DisableFB() end)
 AddToggle("Misc", "FPS BOOST", "FPSBoost", function() ApplyFPS() end)
 AddCategory("Misc", "UTILITIES")
@@ -1973,4 +2187,4 @@ if Config.HighJump then local h = GetHum(); if h then h.UseJumpPower = true; h.J
 if Config.Speed then local h = GetHum(); if h then h.WalkSpeed = Config.WalkSpeedValue end end
 UpdateAllShortcuts(); UpdateFlyBtns()
 
-Notify("⚡ V64", "✓ Aim fix + Shadow fix + Crafting removed | M=меню", 5)
+Notify("⚡ V64", "✓ + 💰 Money Farm додано | M=меню", 5)
