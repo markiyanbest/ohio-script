@@ -46,117 +46,176 @@ local COORDS = {
 }
 
 local ALL_ITEMS = {
-	"4th of July Hat","Acid Gun","Admin AK-47","Admin Nuke","Admin RPG",
-	"Airdrop Marker","Airstrike","AK-47","Apple","AR-15","Armored Truck",
-	"AS VAL","ATM","AUG","Balloon","Banana","Banana Peel","Bandage",
-	"Barrett M107","Baseball Bat","Basketball","Baton","Beach Ball","Beans",
-	"Bear Trap","Black Bandana","Bloxaide","Bloxy Cola","Blue Bandana",
-	"Blue Candy Cane","Blue Gloves","Brass Knuckles","Burger","C4","Cake",
-	"Candy Cane","Cash Register","Chicken","Choco Bunny","Chocolates",
-	"Clover Balloon","Clown","Clown Mallet","Coffee","Component Boxes",
-	"Cookie","Cotton Candy","Crafting table","Crowbar","Cruiser Keys",
-	"Deagle","Diamond Glock","Diamond Taco","Dollar Balloon","Donut",
-	"Double barrel","Dragunov","Drone","Dumbell",
-	"Easter Basket","Electronics","Explosives Scrap","Festive Guitar",
-	"Fire Extinguisher","Fireaxe","Firework","Firework Cake","Firework Cone",
-	"Firework Mortar","Fists","Flamethrower","Flashbang","Flashlight",
-	"Frag grenade","Gems","Glock","Glock 18","Gold AK-47","Gold Deagle",
-	"Gold Lucky Block","Golden Clover Balloon","Gravity Gun","Green Firework",
-	"Green Lucky Block","Grocery Cart","Guitar","Heart Balloon","Heavy C4",
-	"Heavy Vest","Helicopter Keys","Hockey Mask","Hotdog","Hoverboard",
-	"July 4th Firework","Katana","Knife","Kunai","Landmines","Large Present",
-	"Light vest","Locker","Lockpick","M1 Garand","M1911","M249 SAW","M4A1",
-	"Maraca","Materials","Meat Grinder","Medical Supplies","Medium Vest",
-	"Medkit","Megaphone","Military Keycard","Military Key Card","Military Vest",
-	"Molotov","Money Balloon","Money Gun","Money printer","Mossberg","MP7",
+	"4th of July Hat",
+	"Acid Gun",
+	"Admin AK-47",
+	"Admin Nuke",
+	"Admin RPG",
+	"Airdrop Marker",
+	"Airdrop",
+	"Airstrike",
+	"AK-47",
+	"Apple",
+	"AR-15",
+	"Armored Truck",
+	"AS VAL",
+	"ATM",
+	"AUG",
+	"Balloon",
+	"Banana",
+	"Banana Peel",
+	"Bandage",
+	"Barrett M107",
+	"Baseball Bat",
+	"Basketball",
+	"Baton",
+	"Beach Ball",
+	"Beans",
+	"Bear Trap",
+	"Black Bandana",
+	"Bloxaide",
+	"Bloxy Cola",
+	"Blue Bandana",
+	"Blue Candy Cane",
+	"Blue Gloves",
+	"Brass Knuckles",
+	"Burger",
+	"C4",
+	"Cake",
+	"Candy Cane",
+	"Cash Register",
+	"Chicken",
+	"Choco Bunny",
+	"Chocolates",
+	"Clover Balloon",
+	"Clown",
+	"Clown Mallet",
+	"Coffee",
+	"Component Boxes",
+	"Cookie",
+	"Cotton Candy",
+	"Crowbar",
+	"Cruiser Keys",
+	"Deagle",
+	"Diamond Glock",
+	"Diamond Taco",
+	"Dollar Balloon",
+	"Donut",
+	"Double Barrel",
+	"Dragunov",
+	"Drone",
+	"Dumbell",
+	"Easter Basket",
+	"Electronics",
+	"Explosives Scrap",
+	"Festive Guitar",
+	"Fire Extinguisher",
+	"Fireaxe",
+	"Firework",
+	"Firework Cake",
+	"Firework Cone",
+	"Firework Mortar",
+	"Fists",
+	"Flamethrower",
+	"Flashbang",
+	"Flashlight",
+	"Frag Grenade",
+	"Gems",
+	"Glock",
+	"Glock 18",
+	"Gold AK-47",
+	"Gold Deagle",
+	"Gold Lucky Block",
+	"Golden Clover Balloon",
+	"Gravity Gun",
+	"Green Firework",
+	"Green Lucky Block",
+	"Grocery Cart",
+	"Guitar",
+	"Heart Balloon",
+	"Heavy C4",
+	"Heavy Vest",
+	"Helicopter Keys",
+	"Hockey Mask",
+	"Hotdog",
+	"Hoverboard",
+	"July 4th Firework",
+	"Katana",
+	"Knife",
+	"Kunai",
+	"Landmines",
+	"Large Present",
+	"Light Vest",
+	"Locker",
+	"Lockpick",
+	"M1 Garand",
+	"M1911",
+	"M249 SAW",
+	"M4A1",
+	"Maraca",
+	"Materials",
+	"Meat Grinder",
+	"Medical Supplies",
+	"Medium Vest",
+	"Medkit",
+	"Megaphone",
+	"Military Keycard",
+	"Military Key Card",
+	"Military Vest",
+	"Molotov",
+	"Money Balloon",
+	"Money Gun",
+	"Money Printer",
+	"Mossberg",
+	"MP7",
 	"Mustang Keys",
-	"Night Vision Goggles","Nuke Launcher","Orange Lucky Block","Pepper Spray",
-	"Pink Firework","Pizza","Police Keycard","Police Key Card","Presents",
-	"Purple Lucky Block","Python","Raygun","Red Bandana","Red Gloves",
-	"Red Lucky Block","Rifles","Riot Shield","Roman Candle","Rose","RPG","RPK",
-	"Saber","Safes","Saiga 12","Sawn off","Shopping Cart","Sign","Skateboard",
-	"Slot machine","Small Present","Smoke grenade","Sombrero Hat","SPAS-12",
-	"Sparkler","Spectral Scythe","Spiked baseball bat","Stagecoach","Stop Sign",
-	"Stretcher","Suitcase Nuke","Surgeon Mask","Unusual Money Printer","USP 45",
-	"Uzi","Wallet","Weapon Parts","X-Ray Goggles",
-	"Void RPG","Void AS VAL","Void AUG","Void M4A1","Void Barrett M107",
-	"Void AK-47","Void Tommy Gun","Void RPK","Void Sawn Off","Void Riot Shield",
-	"Void M249 SAW","Void MP7","Void Double Barrel","Void Deagle","Void AR-15",
-	"Void Flamethrower","Void Mossberg","Void Python","Void Uzi","Void Glock 18",
-	"Void Glock","Void Dragunov","Void Stagecoach","Void Saiga 12","Void M1911",
-	"Void USP 45","Void Raygun",
-	"Solid Gold RPG","Solid Gold AS VAL","Solid Gold AUG","Solid Gold Barrett",
-	"Solid Gold M4A1","Solid Gold AK-47","Solid Gold Tommy Gun","Solid Gold RPK",
-	"Solid Gold Sawn Off","Solid Gold Riot Shield","Solid Gold M249 SAW",
-	"Solid Gold Double Barrel","Solid Gold MP7","Solid Gold Deagle",
-	"Solid Gold AR-15","Solid Gold Flamethrower","Solid Gold Glock 18",
-	"Solid Gold Mossberg","Solid Gold Python","Solid Gold Uzi",
-	"Solid Gold Dragunov","Solid Gold Glock","Solid Gold Stagecoach",
-	"Solid Gold Saiga 12","Solid Gold M1911","Solid Gold USP 45",
-	"Solid Gold Raygun",
-	"CyberPunk AUG","CyberPunk AS VAL","CyberPunk M4A1","CyberPunk AK-47",
-	"CyberPunk Tommy Gun","CyberPunk Sawn Off","CyberPunk RPK",
-	"CyberPunk Double Barrel","CyberPunk Uzi","CyberPunk Glock 18",
-	"CyberPunk Glock",
-	"Diamond Deagle","Diamond RPG","Diamond AS VAL","Diamond Scar L",
-	"Diamond Barrett","Diamond Double Barrel","Diamond Mossberg",
-	"Diamond Python","Diamond Glock",
-	"Ruby RPG","Ruby Scar L","Ruby AUG","Ruby AS VAL","Ruby Barrett",
-	"Ruby MiniGun","Ruby M4A1","Ruby Sawn Off","Ruby Riot Shield",
-	"Ruby Double Barrel","Ruby M249 SAW","Ruby Deagle","Ruby Mossberg",
-	"Ruby Dragunov","Ruby Saiga 12","Ruby Python","Ruby Glock",
-	"Amethyst RPG","Amethyst AS VAL","Amethyst AUG","Amethyst Scar L",
-	"Amethyst Barrett","Amethyst M4A1","Amethyst AK-47","Amethyst Deagle",
-	"Amethyst Glock","Amethyst Mossberg","Amethyst Python","Amethyst Dragunov",
-	"Sapphire RPG","Sapphire AS VAL","Sapphire AUG","Sapphire Scar L",
-	"Sapphire Barrett","Sapphire M4A1","Sapphire AK-47","Sapphire Deagle",
-	"Sapphire Glock","Sapphire Mossberg","Sapphire Python","Sapphire Dragunov",
-	"Sapphire M249 SAW","Sapphire RPK",
-	"Emerald RPG","Emerald AS VAL","Emerald AUG","Emerald Scar L",
-	"Emerald Barrett","Emerald M4A1","Emerald AK-47","Emerald Deagle",
-	"Emerald Glock","Emerald Mossberg","Emerald Python","Emerald Dragunov",
-	"Nature RPG","Nature AS VAL","Nature AUG","Nature M4A1","Nature AK-47",
-	"Nature Barrett","Nature Scar L","Nature Deagle","Nature Glock",
-	"Nature Mossberg","Nature Dragunov",
-	"Water RPG","Water AS VAL","Water AUG","Water M4A1","Water AK-47",
-	"Water Barrett","Water Scar L","Water Deagle","Water Glock",
-	"Water Mossberg","Water Dragunov",
-	"Flame RPG","Flame AS VAL","Flame AUG","Flame M4A1","Flame AK-47",
-	"Flame Barrett","Flame Scar L","Flame Deagle","Flame Glock",
-	"Flame Mossberg","Flame Dragunov",
-	"Tactical RPG","Tactical AS VAL","Tactical AUG","Tactical M4A1",
-	"Tactical AK-47","Tactical Barrett","Tactical Scar L","Tactical Deagle",
-	"Tactical Glock","Tactical Mossberg","Tactical Dragunov",
-	"Future White RPG","Future White AS VAL","Future White AUG",
-	"Future White M4A1","Future White AK-47","Future White Barrett",
-	"Future White Deagle","Future White Glock",
-	"Future Black RPG","Future Black AS VAL","Future Black AUG",
-	"Future Black M4A1","Future Black AK-47","Future Black Barrett",
-	"Future Black Deagle","Future Black Glock",
-	"Frozen Diamond RPG","Frozen Diamond AS VAL","Frozen Diamond AUG",
-	"Frozen Diamond M4A1","Frozen Diamond AK-47","Frozen Diamond Barrett",
-	"Frozen Diamond Scar L","Frozen Diamond Deagle","Frozen Diamond Glock",
-	"Frozen Diamond Mossberg","Frozen Diamond Dragunov",
-	"Elite RPG","Elite AS VAL","Elite AUG","Elite M4A1","Elite AK-47",
-	"Elite Barrett","Elite Scar L","Elite Deagle","Elite Glock",
-	"Elite Mossberg","Elite Dragunov",
-	"Steampunk RPG","Steampunk AS VAL","Steampunk AUG","Steampunk M4A1",
-	"Steampunk AK-47","Steampunk Barrett","Steampunk Scar L","Steampunk Deagle",
-	"Steampunk Glock","Steampunk Mossberg","Steampunk Dragunov",
-	"Pirate RPG","Pirate AS VAL","Pirate AUG","Pirate M4A1","Pirate AK-47",
-	"Pirate Barrett","Pirate Scar L","Pirate Deagle","Pirate Glock",
-	"Pirate Mossberg","Pirate Dragunov",
-	"Treasure RPG","Treasure AS VAL","Treasure AUG","Treasure M4A1",
-	"Treasure AK-47","Treasure Barrett","Treasure Scar L","Treasure Deagle",
-	"Treasure Glock","Treasure Mossberg",
-	"Cannon RPG","Cannon AS VAL","Cannon AUG","Cannon M4A1","Cannon AK-47",
-	"Gold Cannon RPG","Gold Cannon AS VAL","Gold Cannon AUG",
-	"Gold Cannon M4A1","Gold Cannon AK-47",
-	"WW2 RPG","WW2 AS VAL","WW2 AUG","WW2 M4A1","WW2 AK-47","WW2 Barrett",
-	"WW2 Scar L","WW2 Deagle","WW2 Glock","WW2 Mossberg","WW2 Dragunov",
-	"Prestige RPG","Prestige AS VAL","Prestige AUG","Prestige M4A1",
-	"Prestige AK-47","Prestige Barrett","Prestige Scar L","Prestige Deagle",
-	"Prestige Glock","Prestige Mossberg","Prestige Dragunov","Prestige Raygun",
+	"Night Vision Goggles",
+	"Nuke Launcher",
+	"Orange Lucky Block",
+	"Pepper Spray",
+	"Pink Firework",
+	"Pizza",
+	"Police Keycard",
+	"Police Key Card",
+	"Presents",
+	"Purple Lucky Block",
+	"Python",
+	"Raygun",
+	"Red Bandana",
+	"Red Gloves",
+	"Red Lucky Block",
+	"Rifles",
+	"Riot Shield",
+	"Roman Candle",
+	"Rose",
+	"RPG",
+	"RPK",
+	"Saber",
+	"Safes",
+	"Saiga 12",
+	"Sawn Off",
+	"Shopping Cart",
+	"Sign",
+	"Skateboard",
+	"Slot Machine",
+	"Small Present",
+	"Smoke Grenade",
+	"Sombrero Hat",
+	"SPAS-12",
+	"Sparkler",
+	"Spectral Scythe",
+	"Spiked Baseball Bat",
+	"Stagecoach",
+	"Stop Sign",
+	"Stretcher",
+	"Suitcase Nuke",
+	"Surgeon Mask",
+	"Unusual Money Printer",
+	"USP 45",
+	"Uzi",
+	"Wallet",
+	"Weapon Parts",
+	"X-Ray Goggles",
 }
 
 local ALL_ITEMS_LOOKUP = {}
@@ -165,60 +224,145 @@ for _, item in pairs(ALL_ITEMS) do
 end
 
 local EXTRA_NAMES = {
+	["money printer"] = "Money Printer",
+	["money printers"] = "Money Printer",
+	["moneyprinter"] = "Money Printer",
+	["unusual money printer"] = "Unusual Money Printer",
+	["unusualmoneyprinter"] = "Unusual Money Printer",
+	["kunai"] = "Kunai",
+	["kunais"] = "Kunai",
 	["military key card"] = "Military Key Card",
-	["military keycard"] = "Military Key Card",
+	["military keycard"] = "Military Keycard",
+	["military armory keycard"] = "Military Keycard",
+	["militarykeycard"] = "Military Keycard",
 	["police key card"] = "Police Key Card",
-	["police keycard"] = "Police Key Card",
+	["police keycard"] = "Police Keycard",
+	["police armory keycard"] = "Police Keycard",
+	["policekeycard"] = "Police Keycard",
 	["clover balloon"] = "Clover Balloon",
 	["golden clover balloon"] = "Golden Clover Balloon",
 	["money balloon"] = "Money Balloon",
 	["heart balloon"] = "Heart Balloon",
 	["dollar balloon"] = "Dollar Balloon",
 	["gold ak-47"] = "Gold AK-47",
+	["gold ak47"] = "Gold AK-47",
 	["gold deagle"] = "Gold Deagle",
+	["golden deagle"] = "Gold Deagle",
 	["green firework"] = "Green Firework",
 	["pink firework"] = "Pink Firework",
-	["sparkler"] = "Sparkler",
+	["july 4th firework"] = "July 4th Firework",
+	["july4th firework"] = "July 4th Firework",
 	["diamond glock"] = "Diamond Glock",
-	["golden deagle"] = "Gold Deagle",
+	["diamond taco"] = "Diamond Taco",
 	["candy cane"] = "Candy Cane",
 	["blue candy cane"] = "Blue Candy Cane",
-	["money printer"] = "Money printer",
-	["nuke launcher"] = "Nuke Launcher",
 	["mustang keys"] = "Mustang Keys",
 	["helicopter keys"] = "Helicopter Keys",
 	["cruiser keys"] = "Cruiser Keys",
 	["airdrop marker"] = "Airdrop Marker",
+	["airdrop"] = "Airdrop",
 	["suitcase nuke"] = "Suitcase Nuke",
-	["unusual money printer"] = "Unusual Money Printer",
+	["nuke launcher"] = "Nuke Launcher",
+	["double barrel"] = "Double Barrel",
+	["double barrel shotgun"] = "Double Barrel",
+	["sawn off"] = "Sawn Off",
+	["sawn-off"] = "Sawn Off",
+	["sawnoff"] = "Sawn Off",
+	["frag grenade"] = "Frag Grenade",
+	["smoke grenade"] = "Smoke Grenade",
+	["spiked baseball bat"] = "Spiked Baseball Bat",
+	["baseball bat"] = "Baseball Bat",
+	["light vest"] = "Light Vest",
+	["heavy vest"] = "Heavy Vest",
+	["medium vest"] = "Medium Vest",
+	["military vest"] = "Military Vest",
+	["slot machine"] = "Slot Machine",
+	["cash register"] = "Cash Register",
+	["grocery cart"] = "Grocery Cart",
+	["shopping cart"] = "Shopping Cart",
+	["stop sign"] = "Stop Sign",
+	["night vision goggles"] = "Night Vision Goggles",
+	["xray goggles"] = "X-Ray Goggles",
+	["x-ray goggles"] = "X-Ray Goggles",
+	["xraygoggles"] = "X-Ray Goggles",
+	["spectral scythe"] = "Spectral Scythe",
+	["gold lucky block"] = "Gold Lucky Block",
+	["green lucky block"] = "Green Lucky Block",
+	["orange lucky block"] = "Orange Lucky Block",
+	["purple lucky block"] = "Purple Lucky Block",
+	["red lucky block"] = "Red Lucky Block",
+	["large present"] = "Large Present",
+	["small present"] = "Small Present",
+	["component boxes"] = "Component Boxes",
+	["medical supplies"] = "Medical Supplies",
+	["weapon parts"] = "Weapon Parts",
+	["explosives scrap"] = "Explosives Scrap",
+	["brass knuckles"] = "Brass Knuckles",
+	["clown mallet"] = "Clown Mallet",
+	["meat grinder"] = "Meat Grinder",
+	["money gun"] = "Money Gun",
+	["gravity gun"] = "Gravity Gun",
+	["heavy c4"] = "Heavy C4",
+	["bear trap"] = "Bear Trap",
+	["beach ball"] = "Beach Ball",
+	["choco bunny"] = "Choco Bunny",
+	["cotton candy"] = "Cotton Candy",
+	["banana peel"] = "Banana Peel",
+	["hockey mask"] = "Hockey Mask",
+	["surgeon mask"] = "Surgeon Mask",
+	["sombrero hat"] = "Sombrero Hat",
+	["4th of july hat"] = "4th of July Hat",
+	["bloxy cola"] = "Bloxy Cola",
+	["roman candle"] = "Roman Candle",
+	["firework cake"] = "Firework Cake",
+	["firework cone"] = "Firework Cone",
+	["firework mortar"] = "Firework Mortar",
+	["easter basket"] = "Easter Basket",
+	["festive guitar"] = "Festive Guitar",
+	["fire extinguisher"] = "Fire Extinguisher",
+	["black bandana"] = "Black Bandana",
+	["blue bandana"] = "Blue Bandana",
+	["red bandana"] = "Red Bandana",
+	["blue gloves"] = "Blue Gloves",
+	["red gloves"] = "Red Gloves",
+	["saiga 12"] = "Saiga 12",
+	["m249 saw"] = "M249 SAW",
+	["m1 garand"] = "M1 Garand",
+	["usp 45"] = "USP 45",
+	["glock 18"] = "Glock 18",
+	["ak-47"] = "AK-47",
+	["ak47"] = "AK-47",
+	["ar-15"] = "AR-15",
+	["ar15"] = "AR-15",
+	["as val"] = "AS VAL",
+	["spas-12"] = "SPAS-12",
+	["spas12"] = "SPAS-12",
+	["m4a1"] = "M4A1",
+	["m1911"] = "M1911",
+	["barrett m107"] = "Barrett M107",
+	["barrett"] = "Barrett M107",
+	["atm"] = "ATM",
+	["locker"] = "Locker",
+	["wallet"] = "Wallet",
+	["safes"] = "Safes",
+	["gems"] = "Gems",
+	["lockpick"] = "Lockpick",
+	["sparkler"] = "Sparkler",
+	["raygun"] = "Raygun",
+	["hoverboard"] = "Hoverboard",
+	["skateboard"] = "Skateboard",
+	["stagecoach"] = "Stagecoach",
+	["megaphone"] = "Megaphone",
+	["maraca"] = "Maraca",
+	["materials"] = "Materials",
+	["electronics"] = "Electronics",
+	["drone"] = "Drone",
+	["saber"] = "Saber",
+	["rifles"] = "Rifles",
+	["presents"] = "Presents",
 }
 for k, v in pairs(EXTRA_NAMES) do
 	if not ALL_ITEMS_LOOKUP[k] then ALL_ITEMS_LOOKUP[k] = v end
-end
-
-local SKIN_PREFIXES = {
-	"void","solid gold","cyberpunk","diamond","ruby","amethyst","sapphire",
-	"emerald","nature","water","flame","tactical","future white","future black",
-	"frozen diamond","elite","steampunk","pirate","treasure","cannon","gold cannon",
-	"ww2","prestige",
-}
-local BASE_WEAPONS = {
-	"rpg","as val","aug","m4a1","barrett m107","barrett","ak-47","tommy gun","rpk",
-	"sawn off","riot shield","m249 saw","mp7","double barrel","deagle","ar-15",
-	"flamethrower","mossberg","python","uzi","glock 18","glock","dragunov",
-	"stagecoach","saiga 12","m1911","usp 45","raygun","scar l","minigun",
-}
-
-local function IsGunSkin(name)
-	local nl = name:lower()
-	for _, prefix in ipairs(SKIN_PREFIXES) do
-		if nl:find(prefix, 1, true) then
-			for _, base in ipairs(BASE_WEAPONS) do
-				if nl:find(base, 1, true) then return true end
-			end
-		end
-	end
-	return false
 end
 
 local PriorityLoot = {}
@@ -228,6 +372,65 @@ end
 for k, _ in pairs(EXTRA_NAMES) do
 	PriorityLoot[k] = true
 end
+
+local ItemCategories = {
+	{name = "🏆 ПРІОРИТЕТ", color = Color3.fromRGB(180, 100, 0), items = {
+		"Money Printer","Unusual Money Printer","Money Balloon","Dollar Balloon",
+		"Clover Balloon","Golden Clover Balloon","Heart Balloon",
+		"Mustang Keys","Helicopter Keys","Cruiser Keys",
+		"Military Keycard","Military Key Card","Police Keycard","Police Key Card",
+		"Gold AK-47","Gold Deagle","Diamond Glock",
+		"Admin AK-47","Admin RPG","Admin Nuke",
+		"Suitcase Nuke","Nuke Launcher","Raygun","Barrett M107",
+		"Spectral Scythe","SPAS-12","Kunai",
+		"Diamond Taco","Airdrop Marker","Airdrop","X-Ray Goggles","Night Vision Goggles",
+		"Lockpick","Candy Cane","Blue Candy Cane","Sparkler",
+		"Green Firework","Pink Firework","Gems","Safes",
+	}},
+	{name = "🔫 ЗБРОЯ", color = Color3.fromRGB(160, 30, 30), items = {
+		"Acid Gun","AK-47","AR-15","AS VAL","AUG","Baseball Bat","Baton",
+		"Brass Knuckles","C4","Clown Mallet","Crowbar","Deagle","Double Barrel",
+		"Dragunov","Fire Extinguisher","Fireaxe","Fists","Flamethrower","Flashbang",
+		"Frag Grenade","Glock","Glock 18","Gravity Gun","Heavy C4","Katana","Knife",
+		"Landmines","M1 Garand","M1911","M249 SAW","M4A1","Meat Grinder","Molotov",
+		"Money Gun","Mossberg","MP7","Pepper Spray","Python","Rifles","Riot Shield",
+		"RPG","RPK","Saber","Saiga 12","Sawn Off","Smoke Grenade",
+		"Spiked Baseball Bat","USP 45","Uzi",
+	}},
+	{name = "🛡 БРОНЯ/МЕД", color = Color3.fromRGB(0, 100, 160), items = {
+		"Bandage","Heavy Vest","Light Vest","Medium Vest","Medkit",
+		"Military Vest","Stretcher","Surgeon Mask",
+	}},
+	{name = "💰 ГРОШІ/КЛЮЧІ", color = Color3.fromRGB(180, 150, 0), items = {
+		"ATM","Cash Register","Slot Machine","Wallet",
+	}},
+	{name = "🍎 ЇЖА", color = Color3.fromRGB(0, 140, 60), items = {
+		"Apple","Banana","Banana Peel","Beans","Bloxaide","Bloxy Cola","Burger",
+		"Cake","Chicken","Choco Bunny","Chocolates","Coffee","Cookie",
+		"Cotton Candy","Donut","Hotdog","Pizza","Rose",
+	}},
+	{name = "📦 ЯЩИКИ/ПОДАРУНКИ", color = Color3.fromRGB(100, 60, 0), items = {
+		"Airstrike","Armored Truck","Component Boxes","Drone",
+		"Easter Basket","Locker","Gold Lucky Block","Green Lucky Block","Orange Lucky Block",
+		"Purple Lucky Block","Red Lucky Block","Large Present","Presents","Small Present",
+	}},
+	{name = "🎈 БАЛОНИ/СВЯТО", color = Color3.fromRGB(180, 0, 120), items = {
+		"4th of July Hat","Balloon","Basketball","Beach Ball","Bear Trap",
+		"Clown","Firework","Firework Cake","Firework Cone","Firework Mortar",
+		"Hockey Mask","July 4th Firework","Roman Candle","Sombrero Hat",
+	}},
+	{name = "👗 ОДЯГ", color = Color3.fromRGB(80, 0, 180), items = {
+		"Black Bandana","Blue Bandana","Blue Gloves","Red Bandana","Red Gloves",
+	}},
+	{name = "🔧 ІНСТРУМЕНТИ", color = Color3.fromRGB(60, 60, 60), items = {
+		"Dumbell","Festive Guitar","Flashlight","Grocery Cart","Guitar",
+		"Hoverboard","Maraca","Megaphone","Shopping Cart","Sign","Skateboard",
+		"Stagecoach","Stop Sign",
+	}},
+	{name = "⚙️ МАТЕРІАЛИ", color = Color3.fromRGB(40, 80, 40), items = {
+		"Electronics","Explosives Scrap","Materials","Medical Supplies","Weapon Parts",
+	}},
+}
 
 local SAVE_KEY = "MarkiyanProV64_Settings"
 local function SaveSettings(config, itemPicker)
@@ -248,8 +451,6 @@ local function LoadSettings()
 		if readfile and isfile then
 			if isfile(SAVE_KEY..".json") then
 				data = HttpService:JSONDecode(readfile(SAVE_KEY..".json"))
-			elseif isfile("MarkiyanProV63_Settings.json") then
-				data = HttpService:JSONDecode(readfile("MarkiyanProV63_Settings.json"))
 			end
 		end
 	end)
@@ -273,6 +474,11 @@ local Config = {
 
 local ItemPickerState = {}
 for _, item in pairs(ALL_ITEMS) do ItemPickerState[item] = true end
+for _, cat in pairs(ItemCategories) do
+	for _, item in pairs(cat.items) do
+		if ItemPickerState[item] == nil then ItemPickerState[item] = true end
+	end
+end
 
 local Binds = {
 	Fly=Enum.KeyCode.V,AimActive=Enum.KeyCode.G,
@@ -360,6 +566,7 @@ local BLACKLIST_WORDS = {
 	"npc","shopkeeper","vendor","vehicle","car","truck",
 	"rent","house","claim","clan","base","spawn","teleport",
 	"atm machine","deposit","withdraw","bank terminal",
+	"crafting table","crafting","workbench",
 }
 
 local ALLOWED_ACTIONS = {
@@ -374,7 +581,8 @@ local function IsItemEnabled(itemName)
 	if ItemPickerState[itemName] ~= nil then return ItemPickerState[itemName] end
 	local exact = ALL_ITEMS_LOOKUP[itemName:lower()]
 	if exact and ItemPickerState[exact] ~= nil then return ItemPickerState[exact] end
-	if IsGunSkin(itemName) then return true end
+	local fromExtra = EXTRA_NAMES[itemName:lower()]
+	if fromExtra and ItemPickerState[fromExtra] ~= nil then return ItemPickerState[fromExtra] end
 	return false
 end
 
@@ -392,8 +600,6 @@ local function FindItemName(parentName, objectText)
 	local oLow = (objectText or ""):lower():gsub("^%s+",""):gsub("%s+$","")
 	if ALL_ITEMS_LOOKUP[pLow] then return ALL_ITEMS_LOOKUP[pLow] end
 	if oLow ~= "" and ALL_ITEMS_LOOKUP[oLow] then return ALL_ITEMS_LOOKUP[oLow] end
-	if IsGunSkin(pLow) then return parentName end
-	if oLow ~= "" and IsGunSkin(oLow) then return objectText end
 	return nil
 end
 
@@ -407,7 +613,6 @@ local function IsActionAllowed(actionText)
 	return false
 end
 
--- Швидка перевірка промпту без зайвих затримок
 local function QuickCheckPrompt(prompt)
 	if not prompt or not prompt.Parent then return false, nil end
 	local en = false
@@ -418,21 +623,17 @@ local function QuickCheckPrompt(prompt)
 	if kbKey == Enum.KeyCode.F then return false, nil end
 	local par = prompt.Parent
 	if not par then return false, nil end
-
 	local parentName = ""
 	pcall(function() parentName = par.Name or "" end)
 	local actionText = ""
 	pcall(function() actionText = (prompt.ActionText or "") end)
 	local objectText = ""
 	pcall(function() objectText = (prompt.ObjectText or "") end)
-
 	local aLow = actionText:lower():gsub("^%s+",""):gsub("%s+$","")
 	local pLow = parentName:lower():gsub("^%s+",""):gsub("%s+$","")
-
 	if BLACKLIST_ACTIONS[aLow] then return false, nil end
 	if IsBlacklistedText(pLow) then return false, nil end
 	if IsBlacklistedText(aLow) then return false, nil end
-
 	local parentBlacklisted = false
 	pcall(function()
 		if par.Parent then
@@ -440,14 +641,11 @@ local function QuickCheckPrompt(prompt)
 		end
 	end)
 	if parentBlacklisted then return false, nil end
-
 	if IsInsidePlayerCharacter(par) then return false, nil end
-
 	local matchedItem = FindItemName(parentName, objectText)
 	if not matchedItem then return false, nil end
 	if not IsItemEnabled(matchedItem) then return false, nil end
 	if not IsActionAllowed(aLow) then return false, nil end
-
 	return true, matchedItem
 end
 
@@ -494,11 +692,15 @@ local function SafeFirePrompt(prompt)
 	return true
 end
 
+-- ============================================================
+-- AIM SYSTEM - покращений без зайвого переключення
+-- ============================================================
 local aimTarget = nil
 local aimLocked = false
 local aimLastSwitch = 0
-local aimSwitchCD = 0.3
+local aimSwitchCD = 0.8 -- збільшено щоб не переключатись часто
 local aimLostFrames = 0
+local aimLostMax = 60 -- більше фреймів перед втратою цілі
 local lastPing = 0
 local pingTick = 0
 local shadowSavedPos = nil
@@ -524,6 +726,29 @@ local function ScreenDist(part)
 	return (Vector2.new(pos.X, pos.Y) - center).Magnitude
 end
 
+-- Перевірка чи ціль видима (не за стіною)
+local function IsVisible(part)
+	if not part then return false end
+	local origin = Camera.CFrame.Position
+	local direction = part.Position - origin
+	local rayParams = RaycastParams.new()
+	rayParams.FilterType = Enum.RaycastFilterType.Exclude
+	-- Виключаємо всіх гравців
+	local excludeList = {}
+	for _, p in pairs(Players:GetPlayers()) do
+		if p.Character then table.insert(excludeList, p.Character) end
+	end
+	local myChar = GetChar()
+	if myChar then table.insert(excludeList, myChar) end
+	rayParams.FilterDescendantsInstances = excludeList
+	local result = workspace:Raycast(origin, direction, rayParams)
+	-- Якщо промінь нічого не вдарив або вдарив далі цілі — ціль видима
+	if not result then return true end
+	local hitDist = (result.Position - origin).Magnitude
+	local targetDist = direction.Magnitude
+	return hitDist >= targetDist - 2
+end
+
 local function FindNewTarget()
 	local fov = Config.AimFOV
 	local best, bestDist = nil, math.huge
@@ -533,6 +758,8 @@ local function FindNewTarget()
 		local h = char:FindFirstChildOfClass("Humanoid")
 		if not h or h.Health <= 0 then continue end
 		local part = FindAimPart(char); if not part then continue end
+		-- Перевіряємо видимість — не наводимо через стіни
+		if not IsVisible(part) then continue end
 		local sd = ScreenDist(part)
 		if sd > fov then continue end
 		if sd < bestDist then bestDist = sd; best = p end
@@ -550,9 +777,15 @@ local function GetBestAimTarget()
 				local part = FindAimPart(char)
 				if part then
 					local sd = ScreenDist(part)
-					if sd <= Config.AimFOV * 2 then aimLostFrames = 0; return char end
+					-- Тримаємо ціль навіть якщо вона трохи виходить з FOV
+					if sd <= Config.AimFOV * 2.5 then
+						-- Перевіряємо видимість тільки якщо ціль далеко за FOV
+						aimLostFrames = 0
+						return char
+					end
 					aimLostFrames = aimLostFrames + 1
-					if aimLostFrames < 20 then return char end
+					-- Більше терпіння перед переключенням
+					if aimLostFrames < aimLostMax then return char end
 				end
 			end
 		end
@@ -617,7 +850,8 @@ local function StartSilentAim()
 	silentActive = true; silentOrigCF = Camera.CFrame
 	local vel = Vector3.zero
 	pcall(function() vel = head.AssemblyLinearVelocity end)
-	local predPos = head.Position + vel * math.clamp(lastPing, 0.02, 0.2)
+	-- Мінімальний предікт для silent aim
+	local predPos = head.Position + vel * math.clamp(lastPing, 0.01, 0.08)
 	Camera.CFrame = CFrame.new(Camera.CFrame.Position, predPos)
 end
 
@@ -641,7 +875,8 @@ RS.RenderStepped:Connect(function()
 			if head then
 				local vel = Vector3.zero
 				pcall(function() vel = head.AssemblyLinearVelocity end)
-				local predPos = head.Position + vel * math.clamp(lastPing, 0.02, 0.2)
+				-- Мінімальний предікт
+				local predPos = head.Position + vel * math.clamp(lastPing, 0.01, 0.08)
 				Camera.CFrame = CFrame.new(Camera.CFrame.Position, predPos)
 			end
 		end
@@ -853,138 +1088,80 @@ end
 local farmRunning = false
 local farmStats = {collected = 0, skipped = 0, lastItem = ""}
 
--- ================================================================
--- НОВИЙ АВТО ФАРМ: без лагів, миттєве переключення між предметами
--- ================================================================
 task.spawn(function()
-	-- Кеш відмовлених промптів щоб не намагатись знову
 	local failedPrompts = {}
-	local FAIL_TIMEOUT = 4 -- секунди після яких спробуємо знову
-
+	local FAIL_TIMEOUT = 4
 	while true do
-		task.wait(0.05) -- мінімальна затримка між ітераціями
-
+		task.wait(0.05)
 		if not Config.Farm then
 			farmRunning = false
 			failedPrompts = {}
 			task.wait(0.5)
 			continue
 		end
-
-		if not IsHumAlive() then
-			task.wait(1)
-			continue
-		end
-
+		if not IsHumAlive() then task.wait(1); continue end
 		farmRunning = true
 		local root = GetRoot()
 		if not root then task.wait(0.5); continue end
-
-		-- Збираємо всі валідні промпти одним проходом (без yield)
 		local priorityList = {}
 		local normalList = {}
 		local now = tick()
-
-		-- Очищаємо старі записи про невдачі
 		for k, t in pairs(failedPrompts) do
 			if now - t > FAIL_TIMEOUT then failedPrompts[k] = nil end
 		end
-
 		for _, v in pairs(workspace:GetDescendants()) do
 			if not v:IsA("ProximityPrompt") then continue end
-
-			-- Пропускаємо якщо нещодавно не вдалося
 			local uid = tostring(v)
 			if failedPrompts[uid] then continue end
-
 			local ok, matchedItem = QuickCheckPrompt(v)
 			if not ok or not matchedItem then continue end
-
 			local pos = GetPromptPosition(v)
 			if not pos then continue end
-
 			local dist = (root.Position - pos).Magnitude
 			if dist > (Config.FarmRange or 900) then continue end
-
 			local entry = {prompt = v, name = matchedItem, pos = pos, dist = dist, uid = uid}
-
-			local iLow = matchedItem:lower()
-			if PriorityLoot[iLow] or IsGunSkin(iLow) then
+			if PriorityLoot[matchedItem:lower()] then
 				table.insert(priorityList, entry)
 			else
 				table.insert(normalList, entry)
 			end
 		end
-
-		-- Сортуємо за відстанню
 		table.sort(priorityList, function(a, b) return a.dist < b.dist end)
 		table.sort(normalList, function(a, b) return a.dist < b.dist end)
-
-		-- Об'єднуємо: спочатку пріоритет, потім решта
 		local allEntries = {}
 		for _, e in ipairs(priorityList) do table.insert(allEntries, e) end
 		for _, e in ipairs(normalList) do table.insert(allEntries, e) end
-
-		if #allEntries == 0 then
-			task.wait(0.5)
-			continue
-		end
-
-		-- Обробляємо кожен предмет окремо з таймаутом
+		if #allEntries == 0 then task.wait(0.5); continue end
 		for _, entry in ipairs(allEntries) do
 			if not Config.Farm or not IsHumAlive() then break end
-
 			local prompt = entry.prompt
 			if not prompt or not prompt.Parent then continue end
-
-			-- Перевіряємо чи промпт ще валідний
 			local stillOk, _ = QuickCheckPrompt(prompt)
 			if not stillOk then continue end
-
 			local myRoot = GetRoot()
 			if not myRoot then break end
-
 			local pos = entry.pos
 			local dist = (myRoot.Position - pos).Magnitude
-
-			-- Телепортуємося якщо далеко
 			if dist > 12 then
 				SafeTeleport(pos)
-				task.wait(0.15) -- мінімальна затримка після тп
+				task.wait(0.15)
 			else
-				-- Якщо близько просто підходимо
-				pcall(function()
-					myRoot.CFrame = CFrame.new(pos + Vector3.new(0, 1, 0))
-				end)
+				pcall(function() myRoot.CFrame = CFrame.new(pos + Vector3.new(0, 1, 0)) end)
 				task.wait(0.05)
 			end
-
 			if not Config.Farm or not IsHumAlive() then break end
-
-			-- Перевіряємо ще раз після переміщення
 			if not prompt or not prompt.Parent then continue end
 			local okAfterMove, _ = QuickCheckPrompt(prompt)
-			if not okAfterMove then
-				failedPrompts[entry.uid] = tick()
-				continue
-			end
-
-			-- Визначаємо час утримання промпту
+			if not okAfterMove then failedPrompts[entry.uid] = tick(); continue end
 			local holdTime = 0
 			pcall(function() holdTime = prompt.HoldDuration or 0 end)
-
-			-- Встановлюємо таймаут: якщо holdTime великий — пропускаємо і переходимо далі
 			if holdTime > 3 then
-				-- Занадто довго тримати — позначаємо як невдалий і рухаємось далі
 				failedPrompts[entry.uid] = tick()
 				farmStats.skipped = farmStats.skipped + 1
 				continue
 			end
-
-			-- Виконуємо з таймаутом
 			local collected = false
 			local attemptDone = false
-
 			task.spawn(function()
 				local fireOk = SafeFirePrompt(prompt)
 				if fireOk then
@@ -997,28 +1174,20 @@ task.spawn(function()
 				end
 				attemptDone = true
 			end)
-
-			-- Чекаємо завершення але не більше holdTime + 0.5 секунди
 			local maxWait = math.max(holdTime + 0.5, 0.3)
 			local waited = 0
 			local step = 0.05
 			while not attemptDone and waited < maxWait do
 				task.wait(step)
 				waited = waited + step
-				-- Якщо фарм вимкнули або померли — виходимо
 				if not Config.Farm or not IsHumAlive() then break end
 			end
-
-			-- Якщо не завершилось — позначаємо як невдале і ОДРАЗУ переходимо до наступного
 			if not attemptDone then
 				failedPrompts[entry.uid] = tick()
 				farmStats.skipped = farmStats.skipped + 1
 			end
-
-			-- Мінімальна пауза між предметами
 			task.wait(0.05)
 		end
-
 		farmRunning = false
 		task.wait(0.1)
 	end
@@ -1059,14 +1228,18 @@ RS:BindToRenderStep("MrkAim", 2000, function()
 		local target = GetBestAimTarget()
 		local part = target and FindAimPart(target)
 		if part then
-			local predTime = math.clamp(lastPing, 0.01, 0.25)
-			local vel = Vector3.zero; pcall(function() vel = part.AssemblyLinearVelocity end)
-			local dist = (Camera.CFrame.Position - part.Position).Magnitude
-			local predMul = math.clamp(dist / 100, 0.3, 1.5)
-			local predPos = part.Position + vel * predTime * predMul
-			if vel.Y < -5 then predPos = predPos + Vector3.new(0, -4.9 * predTime * predTime, 0) end
-			local smooth = Config.AimSmooth; local sd = ScreenDist(part)
-			if sd < 30 then smooth = smooth * 0.3 elseif sd < 80 then smooth = smooth * 0.6 end
+			-- Мінімальний предікт для аїму (менше ніж раніше)
+			local predTime = math.clamp(lastPing, 0.01, 0.12)
+			local vel = Vector3.zero
+			pcall(function() vel = part.AssemblyLinearVelocity end)
+			-- Обмежуємо горизонтальну швидкість для предікту
+			local horizVel = Vector3.new(vel.X, 0, vel.Z)
+			-- Предікт тільки по горизонталі, без вертикального
+			local predPos = part.Position + horizVel * predTime
+			local smooth = Config.AimSmooth
+			local sd = ScreenDist(part)
+			if sd < 30 then smooth = smooth * 0.25
+			elseif sd < 80 then smooth = smooth * 0.5 end
 			Camera.CFrame = Camera.CFrame:Lerp(CFrame.new(Camera.CFrame.Position, predPos), smooth)
 		end
 	else
@@ -1101,14 +1274,23 @@ RS.Heartbeat:Connect(function(dt)
 			local tR = tChar and tChar:FindFirstChild("HumanoidRootPart")
 			if tR then
 				local depth = Config.ShadowDepth or 15
+				-- Розміщуємо ПРЯМО під ігроком без предікту
+				-- Позиція: точно під HumanoidRootPart на depth вниз
 				local targetPos = tR.Position - Vector3.new(0, depth, 0)
-				local vel = Vector3.zero; pcall(function() vel = tR.AssemblyLinearVelocity end)
-				local predPos = targetPos + vel * math.clamp(lastPing, 0, 0.15)
+				-- Напрям погляду цілі (лежачий стан)
 				local lookDir = tR.CFrame.LookVector
 				local flatLook = Vector3.new(lookDir.X, 0, lookDir.Z)
-				if flatLook.Magnitude < 0.1 then flatLook = Vector3.new(1, 0, 0) end; flatLook = flatLook.Unit
-				local lyingCF = CFrame.new(predPos, predPos + flatLook) * CFrame.Angles(math.rad(90), 0, 0)
-				pcall(function() root.CFrame = lyingCF; root.AssemblyLinearVelocity = vel; root.AssemblyAngularVelocity = Vector3.zero end)
+				if flatLook.Magnitude < 0.1 then flatLook = Vector3.new(1, 0, 0) end
+				flatLook = flatLook.Unit
+				-- Лежачий CFrame: повертаємо на 90 градусів вперед
+				-- CFrame.new(pos, pos+look) дає напрям, потім нахиляємо
+				local lyingCF = CFrame.new(targetPos, targetPos + flatLook) * CFrame.Angles(math.rad(90), 0, 0)
+				pcall(function()
+					root.CFrame = lyingCF
+					-- Копіюємо швидкість цілі щоб не відставати
+					root.AssemblyLinearVelocity = tR.AssemblyLinearVelocity
+					root.AssemblyAngularVelocity = Vector3.zero
+				end)
 			end
 		end
 	else
@@ -1174,16 +1356,9 @@ local screenSize = SG.AbsoluteSize
 local isSmallScreen = IsMobile and (screenSize.Y < 700 or screenSize.X < 400)
 
 local MW, MH
-if isSmallScreen then
-	MW = 240
-	MH = 400
-elseif IsMobile then
-	MW = 300
-	MH = 560
-else
-	MW = 420
-	MH = 660
-end
+if isSmallScreen then MW = 240; MH = 400
+elseif IsMobile then MW = 300; MH = 560
+else MW = 420; MH = 660 end
 
 local Main = Instance.new("Frame", SG)
 Main.Size = UDim2.new(0, MW, 0, MH); Main.AnchorPoint = Vector2.new(0.5, 0.5)
@@ -1527,154 +1702,28 @@ AddToggle("Misc", "ANTI-AFK", "AntiAFK")
 AddCategory("Misc", "ACTIONS")
 AddAction("Misc", "🏦 ROB BANK (10x)", Color3.fromRGB(150, 20, 20), StartRobbery)
 
-local ItemCategories = {
-	{name = "🏆 ПРІОРИТЕТ", color = Color3.fromRGB(180, 100, 0), items = {
-		"Money printer","Unusual Money Printer","Money Balloon","Dollar Balloon",
-		"Clover Balloon","Golden Clover Balloon","Heart Balloon",
-		"Mustang Keys","Helicopter Keys","Cruiser Keys",
-		"Military Keycard","Military Key Card","Police Keycard","Police Key Card",
-		"Gold AK-47","Gold Deagle","Diamond Glock",
-		"Admin AK-47","Admin RPG","Admin Nuke",
-		"Suitcase Nuke","Nuke Launcher","Raygun","Barrett M107",
-		"Spectral Scythe","SPAS-12","Kunai",
-		"Diamond Taco","Airdrop Marker","X-Ray Goggles","Night Vision Goggles",
-		"Lockpick","Candy Cane","Blue Candy Cane","Sparkler",
-		"Green Firework","Pink Firework","Gems","Safes",
-	}},
-	{name = "🔫 ЗБРОЯ", color = Color3.fromRGB(160, 30, 30), items = {
-		"Acid Gun","AK-47","AR-15","AS VAL","AUG","Baseball Bat","Baton",
-		"Brass Knuckles","C4","Clown Mallet","Crowbar","Deagle","Double barrel",
-		"Dragunov","Fire Extinguisher","Fireaxe","Fists","Flamethrower","Flashbang",
-		"Frag grenade","Glock","Glock 18","Gravity Gun","Heavy C4","Katana","Knife",
-		"Landmines","M1 Garand","M1911","M249 SAW","M4A1","Meat Grinder","Molotov",
-		"Money Gun","Mossberg","MP7","Pepper Spray","Python","Rifles","Riot Shield",
-		"RPG","RPK","Saber","Saiga 12","Sawn off","Smoke grenade",
-		"Spiked baseball bat","USP 45","Uzi",
-	}},
-	{name = "🛡 БРОНЯ/МЕД", color = Color3.fromRGB(0, 100, 160), items = {
-		"Bandage","Heavy Vest","Light vest","Medium Vest","Medkit",
-		"Military Vest","Stretcher","Surgeon Mask",
-	}},
-	{name = "💰 ГРОШІ", color = Color3.fromRGB(180, 150, 0), items = {"ATM","Cash Register","Slot machine","Wallet"}},
-	{name = "🍎 ЇЖА", color = Color3.fromRGB(0, 140, 60), items = {
-		"Apple","Banana","Banana Peel","Beans","Bloxaide","Bloxy Cola","Burger",
-		"Cake","Chicken","Choco Bunny","Chocolates","Coffee","Cookie",
-		"Cotton Candy","Donut","Hotdog","Pizza","Rose",
-	}},
-	{name = "📦 ЯЩИКИ", color = Color3.fromRGB(100, 60, 0), items = {
-		"Airstrike","Armored Truck","Component Boxes","Crafting table","Drone",
-		"Easter Basket","Locker","Gold Lucky Block","Green Lucky Block","Orange Lucky Block",
-		"Purple Lucky Block","Red Lucky Block","Large Present","Presents","Small Present",
-	}},
-	{name = "🎈 БАЛОНИ/СВЯТО", color = Color3.fromRGB(180, 0, 120), items = {
-		"4th of July Hat","Balloon","Basketball","Beach Ball","Bear Trap",
-		"Clown","Dollar Balloon","Firework","Firework Cake","Firework Cone","Firework Mortar",
-		"Hockey Mask","July 4th Firework","Money Balloon","Roman Candle","Sombrero Hat",
-	}},
-	{name = "👗 ОДЯГ", color = Color3.fromRGB(80, 0, 180), items = {"Black Bandana","Blue Bandana","Blue Gloves","Red Bandana","Red Gloves"}},
-	{name = "🔧 ІНСТРУМЕНТИ", color = Color3.fromRGB(60, 60, 60), items = {
-		"Dumbell","Festive Guitar","Flashlight","Grocery Cart","Guitar",
-		"Hoverboard","Maraca","Megaphone","Shopping Cart","Sign","Skateboard",
-		"Stagecoach","Stop Sign",
-	}},
-	{name = "⚙️ МАТЕРІАЛИ", color = Color3.fromRGB(40, 80, 40), items = {"Electronics","Explosives Scrap","Materials","Medical Supplies","Weapon Parts"}},
-	{name = "💎 VOID", color = Color3.fromRGB(50, 0, 80), items = {
-		"Void RPG","Void AS VAL","Void AUG","Void M4A1","Void Barrett M107",
-		"Void AK-47","Void Tommy Gun","Void RPK","Void Sawn Off","Void Riot Shield",
-		"Void M249 SAW","Void MP7","Void Double Barrel","Void Deagle","Void AR-15",
-		"Void Flamethrower","Void Mossberg","Void Python","Void Uzi",
-		"Void Glock 18","Void Glock","Void Dragunov","Void Stagecoach",
-		"Void Saiga 12","Void M1911","Void USP 45","Void Raygun",
-	}},
-	{name = "🥇 SOLID GOLD", color = Color3.fromRGB(160, 120, 0), items = {
-		"Solid Gold RPG","Solid Gold AS VAL","Solid Gold AUG","Solid Gold Barrett",
-		"Solid Gold M4A1","Solid Gold AK-47","Solid Gold Tommy Gun","Solid Gold RPK",
-		"Solid Gold Sawn Off","Solid Gold Riot Shield","Solid Gold M249 SAW",
-		"Solid Gold Double Barrel","Solid Gold MP7","Solid Gold Deagle",
-		"Solid Gold AR-15","Solid Gold Flamethrower","Solid Gold Glock 18",
-		"Solid Gold Mossberg","Solid Gold Python","Solid Gold Uzi",
-		"Solid Gold Dragunov","Solid Gold Glock","Solid Gold Stagecoach",
-		"Solid Gold Saiga 12","Solid Gold M1911","Solid Gold USP 45","Solid Gold Raygun",
-	}},
-	{name = "🌿 ІНШІ СКІНИ", color = Color3.fromRGB(60, 80, 40), items = {
-		"CyberPunk AUG","CyberPunk AS VAL","CyberPunk M4A1","CyberPunk AK-47",
-		"CyberPunk Tommy Gun","CyberPunk Sawn Off","CyberPunk RPK",
-		"CyberPunk Double Barrel","CyberPunk Uzi","CyberPunk Glock 18","CyberPunk Glock",
-		"Diamond Deagle","Diamond RPG","Diamond AS VAL","Diamond Scar L",
-		"Diamond Barrett","Diamond Double Barrel","Diamond Mossberg","Diamond Python","Diamond Glock",
-		"Ruby RPG","Ruby Scar L","Ruby AUG","Ruby AS VAL","Ruby Barrett",
-		"Ruby MiniGun","Ruby M4A1","Ruby Sawn Off","Ruby Riot Shield",
-		"Ruby Double Barrel","Ruby M249 SAW","Ruby Deagle","Ruby Mossberg",
-		"Ruby Dragunov","Ruby Saiga 12","Ruby Python","Ruby Glock",
-		"Amethyst RPG","Amethyst AS VAL","Amethyst AUG","Amethyst Scar L",
-		"Amethyst Barrett","Amethyst M4A1","Amethyst AK-47","Amethyst Deagle",
-		"Amethyst Glock","Amethyst Mossberg","Amethyst Python","Amethyst Dragunov",
-		"Sapphire RPG","Sapphire AS VAL","Sapphire AUG","Sapphire Scar L",
-		"Sapphire Barrett","Sapphire M4A1","Sapphire AK-47","Sapphire Deagle",
-		"Sapphire Glock","Sapphire Mossberg","Sapphire Python","Sapphire Dragunov",
-		"Sapphire M249 SAW","Sapphire RPK",
-		"Emerald RPG","Emerald AS VAL","Emerald AUG","Emerald Scar L",
-		"Emerald Barrett","Emerald M4A1","Emerald AK-47","Emerald Deagle",
-		"Emerald Glock","Emerald Mossberg","Emerald Python","Emerald Dragunov",
-		"Nature RPG","Nature AS VAL","Nature AUG","Nature M4A1","Nature AK-47",
-		"Nature Barrett","Nature Scar L","Nature Deagle","Nature Glock","Nature Mossberg","Nature Dragunov",
-		"Water RPG","Water AS VAL","Water AUG","Water M4A1","Water AK-47",
-		"Water Barrett","Water Scar L","Water Deagle","Water Glock","Water Mossberg","Water Dragunov",
-		"Flame RPG","Flame AS VAL","Flame AUG","Flame M4A1","Flame AK-47",
-		"Flame Barrett","Flame Scar L","Flame Deagle","Flame Glock","Flame Mossberg","Flame Dragunov",
-		"Tactical RPG","Tactical AS VAL","Tactical AUG","Tactical M4A1",
-		"Tactical AK-47","Tactical Barrett","Tactical Scar L","Tactical Deagle",
-		"Tactical Glock","Tactical Mossberg","Tactical Dragunov",
-		"Future White RPG","Future White AS VAL","Future White AUG",
-		"Future White M4A1","Future White AK-47","Future White Barrett",
-		"Future White Deagle","Future White Glock",
-		"Future Black RPG","Future Black AS VAL","Future Black AUG",
-		"Future Black M4A1","Future Black AK-47","Future Black Barrett",
-		"Future Black Deagle","Future Black Glock",
-		"Frozen Diamond RPG","Frozen Diamond AS VAL","Frozen Diamond AUG",
-		"Frozen Diamond M4A1","Frozen Diamond AK-47","Frozen Diamond Barrett",
-		"Frozen Diamond Scar L","Frozen Diamond Deagle","Frozen Diamond Glock",
-		"Frozen Diamond Mossberg","Frozen Diamond Dragunov",
-		"Elite RPG","Elite AS VAL","Elite AUG","Elite M4A1","Elite AK-47",
-		"Elite Barrett","Elite Scar L","Elite Deagle","Elite Glock","Elite Mossberg","Elite Dragunov",
-		"Steampunk RPG","Steampunk AS VAL","Steampunk AUG","Steampunk M4A1",
-		"Steampunk AK-47","Steampunk Barrett","Steampunk Scar L","Steampunk Deagle",
-		"Steampunk Glock","Steampunk Mossberg","Steampunk Dragunov",
-		"Pirate RPG","Pirate AS VAL","Pirate AUG","Pirate M4A1","Pirate AK-47",
-		"Pirate Barrett","Pirate Scar L","Pirate Deagle","Pirate Glock","Pirate Mossberg","Pirate Dragunov",
-		"Treasure RPG","Treasure AS VAL","Treasure AUG","Treasure M4A1",
-		"Treasure AK-47","Treasure Barrett","Treasure Scar L","Treasure Deagle",
-		"Treasure Glock","Treasure Mossberg",
-		"Cannon RPG","Cannon AS VAL","Cannon AUG","Cannon M4A1","Cannon AK-47",
-		"Gold Cannon RPG","Gold Cannon AS VAL","Gold Cannon AUG","Gold Cannon M4A1","Gold Cannon AK-47",
-		"WW2 RPG","WW2 AS VAL","WW2 AUG","WW2 M4A1","WW2 AK-47","WW2 Barrett",
-		"WW2 Scar L","WW2 Deagle","WW2 Glock","WW2 Mossberg","WW2 Dragunov",
-		"Prestige RPG","Prestige AS VAL","Prestige AUG","Prestige M4A1",
-		"Prestige AK-47","Prestige Barrett","Prestige Scar L","Prestige Deagle",
-		"Prestige Glock","Prestige Mossberg","Prestige Dragunov","Prestige Raygun",
-	}},
-}
-
-local categorizedItems = {}
-for _, cat in ipairs(ItemCategories) do for _, item in ipairs(cat.items) do categorizedItems[item] = true end end
-local otherItems = {}
-for _, item in ipairs(ALL_ITEMS) do if not categorizedItems[item] then table.insert(otherItems, item) end end
-if #otherItems > 0 then table.insert(ItemCategories, {name = "📋 ІНШЕ", color = Color3.fromRGB(50, 50, 80), items = otherItems}) end
-
-local iTotalLabel = Instance.new("Frame", Scroll); iTotalLabel.Size = UDim2.new(0.97, 0, 0, isSmallScreen and 22 or 28)
+local iTotalLabel = Instance.new("Frame", Scroll)
+iTotalLabel.Size = UDim2.new(0.97, 0, 0, isSmallScreen and 22 or 28)
 iTotalLabel.BackgroundColor3 = Color3.fromRGB(0, 60, 130); iTotalLabel.BorderSizePixel = 0; iTotalLabel.Visible = false
 Instance.new("UICorner", iTotalLabel); table.insert(Sections["Items"], iTotalLabel)
 local iTL = Instance.new("TextLabel", iTotalLabel); iTL.Size = UDim2.new(1, 0, 1, 0); iTL.BackgroundTransparency = 1
 iTL.TextColor3 = Color3.new(1, 1, 1); iTL.Font = Enum.Font.GothamBold; iTL.TextSize = isSmallScreen and 8 or (IsMobile and 10 or 11)
-iTL.Text = "📦 ITEM PICKER — "..#ALL_ITEMS.." items | ⭐=priority"
+iTL.Text = "📦 ITEM PICKER — "..#ALL_ITEMS.." предметів | ⭐=пріоритет"
 
-local farmStatsLabel = Instance.new("Frame", Scroll); farmStatsLabel.Size = UDim2.new(0.97, 0, 0, isSmallScreen and 20 or 24)
+local farmStatsLabel = Instance.new("Frame", Scroll)
+farmStatsLabel.Size = UDim2.new(0.97, 0, 0, isSmallScreen and 20 or 24)
 farmStatsLabel.BackgroundColor3 = Color3.fromRGB(30, 60, 0); farmStatsLabel.BorderSizePixel = 0; farmStatsLabel.Visible = false
 Instance.new("UICorner", farmStatsLabel); table.insert(Sections["Items"], farmStatsLabel)
 local fSL = Instance.new("TextLabel", farmStatsLabel); fSL.Size = UDim2.new(1, 0, 1, 0); fSL.BackgroundTransparency = 1
 fSL.TextColor3 = Color3.fromRGB(150, 255, 150); fSL.Font = Enum.Font.Gotham; fSL.TextSize = isSmallScreen and 8 or 10
 
-task.spawn(function() while task.wait(2) do if ActiveTab == "Items" then fSL.Text = string.format("📊 Collected: %d | Skipped: %d | Last: %s", farmStats.collected, farmStats.skipped, farmStats.lastItem) end end end)
+task.spawn(function()
+	while task.wait(2) do
+		if ActiveTab == "Items" then
+			fSL.Text = string.format("📊 Зібрано: %d | Пропущено: %d | Останній: %s", farmStats.collected, farmStats.skipped, farmStats.lastItem)
+		end
+	end
+end)
 
 local searchH = isSmallScreen and 34 or (IsMobile and 42 or 36)
 local searchBtnH = isSmallScreen and 24 or (IsMobile and 30 or 26)
@@ -1683,25 +1732,41 @@ sFr.BackgroundColor3 = Color3.fromRGB(16, 16, 26); sFr.BorderSizePixel = 0; sFr.
 Instance.new("UICorner", sFr); table.insert(Sections["Items"], sFr)
 local sB = Instance.new("TextBox", sFr); sB.Size = UDim2.new(0.55, -4, 0, searchBtnH)
 sB.Position = UDim2.new(0, 6, 0.5, -searchBtnH / 2); sB.BackgroundColor3 = Color3.fromRGB(25, 25, 40)
-sB.TextColor3 = Color3.new(1, 1, 1); sB.PlaceholderText = "🔍 search..."
+sB.TextColor3 = Color3.new(1, 1, 1); sB.PlaceholderText = "🔍 пошук..."
 sB.PlaceholderColor3 = Color3.fromRGB(100, 100, 130); sB.Font = Enum.Font.Gotham; sB.TextSize = isSmallScreen and 10 or 12
 sB.ClearTextOnFocus = false; sB.BorderSizePixel = 0; Instance.new("UICorner", sB)
 local eA = Instance.new("TextButton", sFr); eA.Size = UDim2.new(0.21, 0, 0, searchBtnH)
 eA.Position = UDim2.new(0.57, 2, 0.5, -searchBtnH / 2); eA.BackgroundColor3 = Color3.fromRGB(0, 120, 50)
-eA.TextColor3 = Color3.new(1, 1, 1); eA.Font = Enum.Font.GothamBold; eA.TextSize = isSmallScreen and 8 or 10; eA.Text = "ALL✓"; eA.BorderSizePixel = 0
+eA.TextColor3 = Color3.new(1, 1, 1); eA.Font = Enum.Font.GothamBold; eA.TextSize = isSmallScreen and 8 or 10; eA.Text = "ВСІ✓"; eA.BorderSizePixel = 0
 Instance.new("UICorner", eA)
 local dAB = Instance.new("TextButton", sFr); dAB.Size = UDim2.new(0.21, 0, 0, searchBtnH)
 dAB.Position = UDim2.new(0.79, 2, 0.5, -searchBtnH / 2); dAB.BackgroundColor3 = Color3.fromRGB(150, 30, 30)
-dAB.TextColor3 = Color3.new(1, 1, 1); dAB.Font = Enum.Font.GothamBold; dAB.TextSize = isSmallScreen and 8 or 10; dAB.Text = "ALL✗"; dAB.BorderSizePixel = 0
+dAB.TextColor3 = Color3.new(1, 1, 1); dAB.Font = Enum.Font.GothamBold; dAB.TextSize = isSmallScreen and 8 or 10; dAB.Text = "ВСІ✗"; dAB.BorderSizePixel = 0
 Instance.new("UICorner", dAB)
 
 local itemBtns = {}
 local itemH = isSmallScreen and 26 or (IsMobile and 32 or 28)
-local catH = isSmallScreen and 26 or (IsMobile and 32 or 28)
+local catH_menu = isSmallScreen and 26 or (IsMobile and 32 or 28)
 local catBtnH = isSmallScreen and 18 or (IsMobile and 22 or 20)
 
+local categorizedItemsSet = {}
 for _, cat in ipairs(ItemCategories) do
-	local catF = Instance.new("Frame", Scroll); catF.Size = UDim2.new(0.97, 0, 0, catH)
+	for _, item in ipairs(cat.items) do
+		categorizedItemsSet[item] = true
+	end
+end
+local otherItems = {}
+for _, item in ipairs(ALL_ITEMS) do
+	if not categorizedItemsSet[item] then
+		table.insert(otherItems, item)
+	end
+end
+if #otherItems > 0 then
+	table.insert(ItemCategories, {name = "📋 ІНШЕ", color = Color3.fromRGB(50, 50, 80), items = otherItems})
+end
+
+for _, cat in ipairs(ItemCategories) do
+	local catF = Instance.new("Frame", Scroll); catF.Size = UDim2.new(0.97, 0, 0, catH_menu)
 	catF.BackgroundColor3 = cat.color; catF.BorderSizePixel = 0; catF.Visible = false
 	Instance.new("UICorner", catF); table.insert(Sections["Items"], catF)
 	local catLbl = Instance.new("TextLabel", catF); catLbl.Size = UDim2.new(0.75, 0, 1, 0); catLbl.Position = UDim2.new(0, 8, 0, 0)
@@ -1726,7 +1791,7 @@ for _, cat in ipairs(ItemCategories) do
 		b.Font = Enum.Font.GothamBold; b.TextSize = itemTextSize
 		b.BorderSizePixel = 0; b.AutoButtonColor = false; b.TextXAlignment = Enum.TextXAlignment.Left
 		Instance.new("UICorner", b)
-		local isPrio = PriorityLoot[iN:lower()] or IsGunSkin(iN:lower())
+		local isPrio = PriorityLoot[iN:lower()]
 		local function U()
 			if ItemPickerState[iN] then
 				b.BackgroundColor3 = isPrio and Color3.fromRGB(0, 80, 0) or Color3.fromRGB(10, 50, 25)
@@ -1738,20 +1803,41 @@ for _, cat in ipairs(ItemCategories) do
 			end
 		end; U()
 		b.MouseButton1Click:Connect(function() ItemPickerState[iN] = not ItemPickerState[iN]; U(); SaveSettings(Config, ItemPickerState) end)
-		local entry = {frame = f, itemName = iN, update = U}; table.insert(itemBtns, entry); table.insert(catItemBtns, entry)
+		local entry = {frame = f, itemName = iN, update = U}
+		table.insert(itemBtns, entry); table.insert(catItemBtns, entry)
 	end
-	catOn.MouseButton1Click:Connect(function() for _, e in pairs(catItemBtns) do ItemPickerState[e.itemName] = true; e.update() end; SaveSettings(Config, ItemPickerState) end)
-	catOff.MouseButton1Click:Connect(function() for _, e in pairs(catItemBtns) do ItemPickerState[e.itemName] = false; e.update() end; SaveSettings(Config, ItemPickerState) end)
+	catOn.MouseButton1Click:Connect(function()
+		for _, e in pairs(catItemBtns) do ItemPickerState[e.itemName] = true; e.update() end
+		SaveSettings(Config, ItemPickerState)
+	end)
+	catOff.MouseButton1Click:Connect(function()
+		for _, e in pairs(catItemBtns) do ItemPickerState[e.itemName] = false; e.update() end
+		SaveSettings(Config, ItemPickerState)
+	end)
 end
 
 local function FilterItems(q)
 	local ql = q:lower()
-	for _, e in pairs(itemBtns) do e.frame.Visible = (ActiveTab == "Items") and (ql == "" or e.itemName:lower():find(ql, 1, true) ~= nil) end
+	for _, e in pairs(itemBtns) do
+		e.frame.Visible = (ActiveTab == "Items") and (ql == "" or e.itemName:lower():find(ql, 1, true) ~= nil)
+	end
 	task.wait(); Scroll.CanvasSize = UDim2.new(0, 0, 0, LL.AbsoluteContentSize.Y + 20)
 end
 sB:GetPropertyChangedSignal("Text"):Connect(function() if ActiveTab == "Items" then FilterItems(sB.Text) end end)
-eA.MouseButton1Click:Connect(function() local q = sB.Text:lower(); for _, e in pairs(itemBtns) do if q == "" or e.itemName:lower():find(q, 1, true) then ItemPickerState[e.itemName] = true; e.update() end end; SaveSettings(Config, ItemPickerState) end)
-dAB.MouseButton1Click:Connect(function() local q = sB.Text:lower(); for _, e in pairs(itemBtns) do if q == "" or e.itemName:lower():find(q, 1, true) then ItemPickerState[e.itemName] = false; e.update() end end; SaveSettings(Config, ItemPickerState) end)
+eA.MouseButton1Click:Connect(function()
+	local q = sB.Text:lower()
+	for _, e in pairs(itemBtns) do
+		if q == "" or e.itemName:lower():find(q, 1, true) then ItemPickerState[e.itemName] = true; e.update() end
+	end
+	SaveSettings(Config, ItemPickerState)
+end)
+dAB.MouseButton1Click:Connect(function()
+	local q = sB.Text:lower()
+	for _, e in pairs(itemBtns) do
+		if q == "" or e.itemName:lower():find(q, 1, true) then ItemPickerState[e.itemName] = false; e.update() end
+	end
+	SaveSettings(Config, ItemPickerState)
+end)
 
 AddCategory("Binds", "KEYBINDS (PC)")
 local bA = {{key = "Fly", name = "FLY"}, {key = "AimActive", name = "AIM"}, {key = "Noclip", name = "NOCLIP"}, {key = "SilentAim", name = "SILENT"}, {key = "ToggleUI", name = "UI"}}
@@ -1772,7 +1858,10 @@ local function AddBR(tab, aK, aN)
 	bb.Text = Binds[aK] and tostring(Binds[aK]):gsub("Enum%.KeyCode%.","") or "?"
 	Instance.new("UICorner", bb); Instance.new("UIStroke", bb).Color = Color3.fromRGB(0, 100, 200)
 	BBtns[aK] = bb
-	bb.MouseButton1Click:Connect(function() if waitingForBind then return end; waitingForBind = aK; bb.Text = "[...]"; bb.TextColor3 = Color3.fromRGB(255, 220, 50) end)
+	bb.MouseButton1Click:Connect(function()
+		if waitingForBind then return end
+		waitingForBind = aK; bb.Text = "[...]"; bb.TextColor3 = Color3.fromRGB(255, 220, 50)
+	end)
 end
 for _, e in pairs(bA) do AddBR("Binds", e.key, e.name) end
 
@@ -1801,7 +1890,11 @@ end
 
 local function ShowTab(n)
 	ActiveTab = n
-	for nn, frames in pairs(Sections) do for _, f in pairs(frames) do pcall(function() f.Visible = (nn == n) end) end end
+	for nn, frames in pairs(Sections) do
+		for _, f in pairs(frames) do
+			pcall(function() f.Visible = (nn == n) end)
+		end
+	end
 	if n == "Items" then FilterItems(sB.Text) end
 	for nn, b in pairs(TabButtons) do
 		if nn == n then b.BackgroundColor3 = Color3.fromRGB(0, 100, 220); b.TextColor3 = Color3.new(1, 1, 1)
@@ -1816,7 +1909,14 @@ UIS.InputBegan:Connect(function(inp, gpe)
 		if inp.UserInputType == Enum.UserInputType.Keyboard then
 			if inp.KeyCode == Enum.KeyCode.F then
 				if BBtns[waitingForBind] then BBtns[waitingForBind].Text = "⚠ Not F!"; BBtns[waitingForBind].TextColor3 = Color3.fromRGB(255, 80, 80) end
-				task.delay(1, function() if BBtns[waitingForBind] then local a = waitingForBind; BBtns[a].Text = Binds[a] and tostring(Binds[a]):gsub("Enum%.KeyCode%.","") or "?"; BBtns[a].TextColor3 = Color3.fromRGB(170, 200, 255) end; waitingForBind = nil end)
+				task.delay(1, function()
+					if BBtns[waitingForBind] then
+						local a = waitingForBind
+						BBtns[a].Text = Binds[a] and tostring(Binds[a]):gsub("Enum%.KeyCode%.","") or "?"
+						BBtns[a].TextColor3 = Color3.fromRGB(170, 200, 255)
+					end
+					waitingForBind = nil
+				end)
 				return
 			end
 			local a = waitingForBind; Binds[a] = inp.KeyCode
@@ -1873,4 +1973,4 @@ if Config.HighJump then local h = GetHum(); if h then h.UseJumpPower = true; h.J
 if Config.Speed then local h = GetHum(); if h then h.WalkSpeed = Config.WalkSpeedValue end end
 UpdateAllShortcuts(); UpdateFlyBtns()
 
-Notify("⚡ V64", "NO-LAG FARM ✓ M=menu", 5)
+Notify("⚡ V64", "✓ Aim fix + Shadow fix + Crafting removed | M=меню", 5)
