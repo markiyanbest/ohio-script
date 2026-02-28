@@ -1,4 +1,4 @@
--- markiyanbest's script (V67.1 - ALL FIXES: Farm lag fix, Money min sum, Silent Aim fix, Anti-AFK fix)
+-- markiyanbest's script (V67.2 - Shield fix, Auto Safe TP fix, Money return TP, Farm shield bypass)
 local Players = game:GetService("Players")
 local lp = Players.LocalPlayer
 local RS = game:GetService("RunService")
@@ -261,20 +261,19 @@ local Config = {
 	Magnet=false, MagnetTarget=nil, ShadowMagnet=false,
 	ShadowTarget=nil, ShadowDepth=15, AutoSafe=false, SafeHealth=35,
 	SilentAim=false, AimFOV=200, AimPart="Head",
-	-- Ohio Prediction налаштування
 	AimPrediction=135,
 	AimSmooth=0,
 	AimWallCheck=true,
 	HighJump=false, JumpPowerValue=80,
 	MoneyFarm=false,
-	MoneyMinSum=0, -- НОВЕ: мінімальна сума бандла для збору
+	MoneyMinSum=0,
 	SC_Aim=IsMobile, SC_Silent=IsMobile, SC_Fly=IsMobile,
 	SC_Noclip=IsMobile, SC_Speed=IsMobile, SC_Farm=IsMobile,
 	SC_Shadow=IsMobile, SC_HighJump=IsMobile, SC_Safe=false,
 	SC_MoneyFarm=IsMobile,
 	_SafeTP=false, FarmRange=900,
 	FarmDelay=18, FarmMaxHold=20,
-	FarmBatchSize=5, -- НОВЕ: скільки предметів обробляти за один цикл (менше = менше фрізів)
+	FarmBatchSize=5,
 	ThemeIndex=1,
 	ShadowJumpDelay=20,
 }
@@ -346,6 +345,79 @@ local function IsPlayerInvincible(player)
 		if child:IsA("ForceField") then return true end
 	end
 	return false
+end
+
+-- ============================================================
+-- SHIELD (FORCEFIELD) CHECKER — перевіряє чи є щит на персонажі
+-- ============================================================
+local function HasForceField()
+	local char = GetChar()
+	if not char then return false end
+	for _, child in ipairs(char:GetChildren()) do
+		if child:IsA("ForceField") then return true end
+	end
+	return false
+end
+
+-- Функція для прибирання щита шляхом руху
+local function RemoveShieldByMoving()
+	if not HasForceField() then return true end
+	local root = GetRoot()
+	local hum = GetHum()
+	if not root or not hum then return false end
+	local startPos = root.Position
+	local moveDirections = {
+		Vector3.new(5, 0, 0),
+		Vector3.new(-5, 0, 0),
+		Vector3.new(0, 0, 5),
+		Vector3.new(0, 0, -5),
+		Vector3.new(3, 0, 3),
+		Vector3.new(-3, 0, -3),
+	}
+	for _, dir in ipairs(moveDirections) do
+		if not HasForceField() then break end
+		if not IsHumAlive() then return false end
+		pcall(function()
+			root.CFrame = CFrame.new(startPos + dir)
+		end)
+		task.wait(0.15)
+	end
+	-- Повертаємось на початкову позицію
+	if IsHumAlive() then
+		pcall(function()
+			root.CFrame = CFrame.new(startPos)
+		end)
+	end
+	-- Чекаємо ще трохи якщо щит не пропав
+	local waitTime = 0
+	while HasForceField() and waitTime < 5 do
+		if not IsHumAlive() then return false end
+		-- Продовжуємо рухатись
+		pcall(function()
+			local hum2 = GetHum()
+			if hum2 then
+				hum2:Move(Vector3.new(1, 0, 0))
+			end
+		end)
+		task.wait(0.2)
+		waitTime = waitTime + 0.2
+		pcall(function()
+			local hum2 = GetHum()
+			if hum2 then
+				hum2:Move(Vector3.new(-1, 0, -1))
+			end
+		end)
+		task.wait(0.2)
+		waitTime = waitTime + 0.2
+	end
+	-- Зупиняємо рух
+	pcall(function()
+		local hum2 = GetHum()
+		if hum2 then
+			hum2:Move(Vector3.new(0, 0, 0))
+		end
+	end)
+	return not HasForceField()
 end
 
 local function IsInsidePlayerCharacter(obj)
@@ -527,10 +599,11 @@ local function SafeFirePrompt(prompt, attempts)
 end
 
 -- ============================================================
--- CASH BUNDLE FARM (з мінімальною сумою)
+-- CASH BUNDLE FARM (з мінімальною сумою + повернення на останню позицію)
 -- ============================================================
 local moneyFarmRunning = false
 local moneyFarmStats = {collected=0, total=0, skippedSmall=0}
+local moneyFarmSavedPos = nil -- зберігає позицію перед збором грошей
 
 local function GetAllCashBundles()
 	local bundles = {}
@@ -567,10 +640,8 @@ local function GetBundlePosition(bundle)
 	return nil
 end
 
--- Спроба визначити суму бандла (через BillboardGui, IntValue, або Name)
 local function GetBundleValue(bundle)
 	if not bundle or not bundle.Parent then return 0 end
-	-- Перевіряємо IntValue/NumberValue всередині
 	for _, child in ipairs(bundle:GetChildren()) do
 		if child:IsA("IntValue") or child:IsA("NumberValue") then
 			if child.Value and child.Value > 0 then
@@ -578,7 +649,6 @@ local function GetBundleValue(bundle)
 			end
 		end
 	end
-	-- Перевіряємо BillboardGui з текстом суми
 	for _, child in ipairs(bundle:GetDescendants()) do
 		if child:IsA("TextLabel") then
 			local text = child.Text or ""
@@ -589,13 +659,11 @@ local function GetBundleValue(bundle)
 			end
 		end
 	end
-	-- Перевіряємо ім'я
 	local nameNum = bundle.Name:gsub("[^%d]","")
 	if nameNum ~= "" then
 		local num = tonumber(nameNum)
 		if num and num > 0 then return num end
 	end
-	-- Не вдалось визначити — повертаємо 0 (збиратиме якщо мін = 0)
 	return 0
 end
 
@@ -605,7 +673,6 @@ local function CollectOneCashBundle(bundle)
 	if not pos then return false end
 	local root=GetRoot()
 	if not root then return false end
-	-- Перевірка мінімальної суми
 	if Config.MoneyMinSum > 0 then
 		local val = GetBundleValue(bundle)
 		if val > 0 and val < Config.MoneyMinSum then
@@ -657,32 +724,54 @@ task.spawn(function()
 		task.wait(0.15)
 		if not Config.MoneyFarm then
 			moneyFarmRunning=false
+			moneyFarmSavedPos=nil
 			task.wait(0.5)
 			continue
 		end
 		if not IsHumAlive() then task.wait(1); continue end
+		-- Перевірка на щит перед фармом грошей
+		if HasForceField() then
+			RemoveShieldByMoving()
+			if HasForceField() then
+				task.wait(1)
+				continue
+			end
+		end
 		moneyFarmRunning=true
 		local bundles=GetAllCashBundles()
-		if #bundles==0 then task.wait(2); continue end
+		if #bundles==0 then moneyFarmSavedPos=nil; task.wait(2); continue end
 		moneyFarmStats.total=#bundles
 		local root=GetRoot()
-		if root then
-			table.sort(bundles, function(a,b)
-				local posA=GetBundlePosition(a)
-				local posB=GetBundlePosition(b)
-				if not posA then return false end
-				if not posB then return true end
-				return (root.Position-posA).Magnitude < (root.Position-posB).Magnitude
-			end)
+		if not root then task.wait(0.5); continue end
+		-- Зберігаємо позицію ПЕРЕД збором грошей
+		if not moneyFarmSavedPos then
+			moneyFarmSavedPos = root.Position
 		end
+		table.sort(bundles, function(a,b)
+			local posA=GetBundlePosition(a)
+			local posB=GetBundlePosition(b)
+			if not posA then return false end
+			if not posB then return true end
+			return (root.Position-posA).Magnitude < (root.Position-posB).Magnitude
+		end)
+		local collectedAny = false
 		for _, bundle in ipairs(bundles) do
 			if not Config.MoneyFarm then break end
 			if not IsHumAlive() then break end
 			if not bundle.Parent then continue end
-			CollectOneCashBundle(bundle)
-			moneyFarmStats.collected=moneyFarmStats.collected+1
+			local result = CollectOneCashBundle(bundle)
+			if result then
+				moneyFarmStats.collected=moneyFarmStats.collected+1
+				collectedAny = true
+			end
 			task.wait(0.08)
 		end
+		-- Після збору грошей — повертаємось на збережену позицію
+		if collectedAny and moneyFarmSavedPos and IsHumAlive() then
+			SafeTeleport(moneyFarmSavedPos)
+			task.wait(0.2)
+		end
+		moneyFarmSavedPos = nil -- скидаємо, наступного разу збережемо нову позицію
 		moneyFarmRunning=false
 		task.wait(1.5)
 	end
@@ -864,7 +953,7 @@ end)
 local MobUp, MobDn = false, false
 
 -- ============================================================
--- SILENT AIM — ВИПРАВЛЕНИЙ (правильна snap-restore логіка)
+-- SILENT AIM — ВИПРАВЛЕНИЙ
 -- ============================================================
 local isShooting = false
 local shootTouches = {}
@@ -872,7 +961,7 @@ local silentOrigCF = nil
 local silentActive = false
 local prevShooting = false
 local silentSnapTime = 0
-local SILENT_SNAP_DURATION = 0.08 -- як довго тримати snap камери (секунди)
+local SILENT_SNAP_DURATION = 0.08
 
 UIS.TouchStarted:Connect(function(inp, gpe)
 	if gpe then return end
@@ -884,18 +973,15 @@ UIS.TouchEnded:Connect(function(inp)
 	isShooting = (next(shootTouches) ~= nil)
 end)
 
--- Silent Aim: при натисканні стрільби миттєво повертає камеру на ціль на 1 кадр, потім повертає назад
 local function DoSilentSnap()
 	if not Config.SilentAim then return end
 	local tc = GetBestAimTarget()
 	if not tc then return end
 	local head = FindAimPart(tc)
 	if not head then return end
-	-- Зберігаємо оригінальну камеру ПЕРЕД snap
 	silentOrigCF = Camera.CFrame
 	silentActive = true
 	silentSnapTime = tick()
-	-- Обчислюємо predicted position
 	local vel = Vector3.zero
 	pcall(function()
 		local rootPart = tc:FindFirstChild("HumanoidRootPart")
@@ -903,7 +989,6 @@ local function DoSilentSnap()
 	end)
 	local prediction = Config.AimPrediction / 1000
 	local predPos = head.Position + (vel * prediction)
-	-- SNAP камеру на ціль
 	Camera.CFrame = CFrame.new(Camera.CFrame.Position, predPos)
 end
 
@@ -916,7 +1001,6 @@ local function RestoreSilentAim()
 	end
 end
 
--- Silent Aim RenderStepped — snap тільки на момент стрільби
 RS.RenderStepped:Connect(function()
 	if not Config.SilentAim then
 		if silentActive then RestoreSilentAim() end
@@ -925,13 +1009,10 @@ RS.RenderStepped:Connect(function()
 	end
 	local shooting = IsPC and UIS:IsMouseButtonPressed(Enum.UserInputType.MouseButton1) or isShooting
 	if shooting and not prevShooting then
-		-- Початок стрільби — snap
 		DoSilentSnap()
 	elseif not shooting and prevShooting then
-		-- Кінець стрільби — restore
 		RestoreSilentAim()
 	elseif shooting and silentActive then
-		-- Під час стрільби тримаємо snap на цілі (оновлюємо позицію цілі)
 		local tc = GetBestAimTarget()
 		if tc then
 			local head = FindAimPart(tc)
@@ -946,14 +1027,11 @@ RS.RenderStepped:Connect(function()
 				Camera.CFrame = CFrame.new(Camera.CFrame.Position, predPos)
 			end
 		else
-			-- Ціль зникла — restore
 			RestoreSilentAim()
 		end
 	elseif not shooting and silentActive then
-		-- Якщо стрільба закінчилась але snap ще активний — restore
 		RestoreSilentAim()
 	end
-	-- Авто-restore якщо snap тримається занадто довго (захист)
 	if silentActive and (tick() - silentSnapTime) > 0.5 then
 		RestoreSilentAim()
 	end
@@ -1044,9 +1122,8 @@ task.spawn(function()
 end)
 
 -- ============================================================
--- ANTI-AFK — ПОСИЛЕНИЙ (3 методи)
+-- ANTI-AFK — ПОСИЛЕНИЙ (4 методи)
 -- ============================================================
--- Метод 1: lp.Idled
 lp.Idled:Connect(function()
 	if Config.AntiAFK then
 		pcall(function()
@@ -1056,7 +1133,6 @@ lp.Idled:Connect(function()
 	end
 end)
 
--- Метод 2: Таймер кожні 50 секунд
 task.spawn(function()
 	while task.wait(50) do
 		if Config.AntiAFK then
@@ -1068,14 +1144,13 @@ task.spawn(function()
 	end
 end)
 
--- Метод 3: Додатковий таймер кожні 120 секунд (клік + рух миші)
 task.spawn(function()
 	while task.wait(120) do
 		if Config.AntiAFK then
 			pcall(function()
 				VirtualUser:CaptureController()
 				VirtualUser:ClickButton2(Vector2.new(0,0))
-				VirtualUser:SetKeyDown(0x77) -- W key
+				VirtualUser:SetKeyDown(0x77)
 				task.wait(0.1)
 				VirtualUser:SetKeyUp(0x77)
 			end)
@@ -1083,7 +1158,6 @@ task.spawn(function()
 	end
 end)
 
--- Метод 4: Ще один Idled ловлячий з короткою затримкою
 task.spawn(function()
 	while task.wait(180) do
 		if Config.AntiAFK then
@@ -1092,6 +1166,29 @@ task.spawn(function()
 				task.wait(0.1)
 				VirtualUser:Button2Up(Vector2.new(0,0), Camera.CFrame)
 			end)
+		end
+	end
+end)
+
+-- ============================================================
+-- AUTO SAFE TP — ВИПРАВЛЕНИЙ (працює завжди, не залежить від Farm)
+-- ============================================================
+local autoSafeCD = 0
+task.spawn(function()
+	while task.wait(0.3) do
+		if not Config.AutoSafe then continue end
+		if not IsHumAlive() then continue end
+		if tick() - autoSafeCD < 3 then continue end
+		local hum = GetHum()
+		local root = GetRoot()
+		if not hum or not root then continue end
+		if hum.Health <= Config.SafeHealth then
+			local distToSafe = (root.Position - COORDS.SAFE_ZONE).Magnitude
+			if distToSafe > 20 then
+				SafeTeleport(COORDS.SAFE_ZONE)
+				autoSafeCD = tick()
+				Notify("🛡 AUTO SAFE", "TP до Safe Zone! HP: "..math.floor(hum.Health), 3)
+			end
 		end
 	end
 end)
@@ -1251,29 +1348,26 @@ local function RestoreCollision()
 end
 
 -- ============================================================
--- AUTO FARM — ВИПРАВЛЕНИЙ (менше фрізів, батчевий підхід, кешований список промтів)
+-- AUTO FARM — ВИПРАВЛЕНИЙ (з перевіркою на щит ForceField)
 -- ============================================================
 local farmRunning = false
 local farmStats = {collected=0, skipped=0, lastItem=""}
 
--- Кешований список ProximityPrompt — оновлюється рідше ніж кожен кадр
 local cachedPrompts = {}
 local lastPromptScan = 0
-local PROMPT_SCAN_INTERVAL = 1.5 -- сканувати workspace кожні 1.5 секунди замість кожного кадру
+local PROMPT_SCAN_INTERVAL = 1.5
 
 local function ScanPrompts()
 	local now = tick()
 	if now - lastPromptScan < PROMPT_SCAN_INTERVAL then return cachedPrompts end
 	lastPromptScan = now
 	local newList = {}
-	-- Скануємо з yield щоб не фрізити
 	local count = 0
 	for _, v in pairs(workspace:GetDescendants()) do
 		if v:IsA("ProximityPrompt") then
 			table.insert(newList, v)
 		end
 		count = count + 1
-		-- Yield кожні 500 об'єктів щоб не було lag spike
 		if count % 500 == 0 then
 			task.wait()
 		end
@@ -1282,7 +1376,6 @@ local function ScanPrompts()
 	return cachedPrompts
 end
 
--- Початкове сканування в окремому потоці
 task.spawn(function()
 	while true do
 		ScanPrompts()
@@ -1294,7 +1387,7 @@ task.spawn(function()
 	local failedPrompts = {}
 	local FAIL_TIMEOUT = 8
 	while true do
-		task.wait(0.15) -- збільшено з 0.08 для менших фрізів
+		task.wait(0.15)
 		if not Config.Farm then
 			farmRunning=false
 			failedPrompts={}
@@ -1302,6 +1395,15 @@ task.spawn(function()
 			continue
 		end
 		if not IsHumAlive() then task.wait(1); continue end
+		-- НОВЕ: Перевірка на щит (ForceField) — якщо є, рухаємось щоб прибрати
+		if HasForceField() then
+			RemoveShieldByMoving()
+			if HasForceField() then
+				-- Щит ще є — чекаємо
+				task.wait(1)
+				continue
+			end
+		end
 		farmRunning=true
 		local root=GetRoot()
 		if not root then task.wait(0.5); continue end
@@ -1311,7 +1413,6 @@ task.spawn(function()
 		for k, t in pairs(failedPrompts) do
 			if now-t>FAIL_TIMEOUT then failedPrompts[k]=nil end
 		end
-		-- Використовуємо кешований список промтів замість workspace:GetDescendants()
 		local prompts = cachedPrompts
 		local batchCount = 0
 		local maxBatch = Config.FarmBatchSize or 5
@@ -1332,7 +1433,6 @@ task.spawn(function()
 				table.insert(normalList, entry)
 			end
 			batchCount = batchCount + 1
-			-- Обмежуємо кількість перевірених промтів за цикл
 			if batchCount >= maxBatch * 3 then break end
 		end
 		table.sort(priorityList, function(a,b) return a.dist<b.dist end)
@@ -1340,12 +1440,16 @@ task.spawn(function()
 		local allEntries={}
 		for _, e in ipairs(priorityList) do table.insert(allEntries,e) end
 		for _, e in ipairs(normalList) do table.insert(allEntries,e) end
-		if #allEntries==0 then task.wait(0.8); continue end -- збільшено з 0.5
-		-- Обробляємо тільки batchSize предметів за один цикл
+		if #allEntries==0 then task.wait(0.8); continue end
 		local processed = 0
 		for _, entry in ipairs(allEntries) do
 			if processed >= maxBatch then break end
 			if not Config.Farm or not IsHumAlive() then break end
+			-- Перевіряємо щит знову перед кожним предметом
+			if HasForceField() then
+				RemoveShieldByMoving()
+				if HasForceField() then break end
+			end
 			local prompt=entry.prompt
 			if not prompt or not prompt.Parent then continue end
 			local stillOk, _=QuickCheckPrompt(prompt)
@@ -1356,10 +1460,10 @@ task.spawn(function()
 			local dist=(myRoot.Position-pos).Magnitude
 			if dist>12 then
 				SafeTeleport(pos)
-				task.wait(0.35) -- збільшено з 0.28
+				task.wait(0.35)
 			else
 				pcall(function() myRoot.CFrame=CFrame.new(pos+Vector3.new(0,1,0)) end)
-				task.wait(0.15) -- збільшено з 0.1
+				task.wait(0.15)
 			end
 			if not Config.Farm or not IsHumAlive() then break end
 			if not prompt or not prompt.Parent then continue end
@@ -1373,7 +1477,7 @@ task.spawn(function()
 				farmStats.skipped=farmStats.skipped+1
 				continue
 			end
-			local attempts = holdTime>0 and 1 or 3 -- зменшено з 4 до 3
+			local attempts = holdTime>0 and 1 or 3
 			local attemptDone=false
 			local collected=false
 			task.spawn(function()
@@ -1403,7 +1507,6 @@ task.spawn(function()
 			processed = processed + 1
 			local farmDelay=(Config.FarmDelay or 18)/100
 			task.wait(farmDelay)
-			-- Додатковий yield між предметами для зменшення фрізів
 			task.wait(0.05)
 		end
 		farmRunning=false
@@ -1454,7 +1557,6 @@ RS.RenderStepped:Connect(function(dt)
 	end
 end)
 
--- Ohio Prediction CamLock — головний цикл аімботу
 pcall(function() RS:UnbindFromRenderStep("MrkAim") end)
 RS:BindToRenderStep("MrkAim", 2000, function()
 	if Config.AimActive then
@@ -1605,9 +1707,7 @@ RS.Heartbeat:Connect(function(dt)
 	elseif not Config.ShadowMagnet then
 		Config.MagnetTarget=nil
 	end
-	if Config.AutoSafe and not Config.Farm and IsHumAlive() and hum.Health<=Config.SafeHealth then
-		if (root.Position-COORDS.SAFE_ZONE).Magnitude>20 then SafeTeleport(COORDS.SAFE_ZONE) end
-	end
+	-- AUTO SAFE тепер в окремому потоці вище, тут прибрано залежність від Config.Farm
 end)
 
 UIS.JumpRequest:Connect(function()
@@ -1622,6 +1722,7 @@ lp.CharacterRemoving:Connect(function(char)
 	shadowSavedPos=nil; aimTarget=nil; aimLocked=false; aimLostFrames=0
 	silentActive=false; silentOrigCF=nil
 	shadowState.targetHighY=nil; shadowState.highYStartTime=nil; shadowState.lastTargetY=nil
+	moneyFarmSavedPos=nil
 	pcall(function()
 		for _, v in pairs(char:GetDescendants()) do
 			if v:IsA("BasePart") then v.CanCollide=true end
@@ -1633,6 +1734,7 @@ lp.CharacterAdded:Connect(function(char)
 	shadowSavedPos=nil; aimTarget=nil; aimLocked=false; aimLostFrames=0
 	silentActive=false; silentOrigCF=nil
 	shadowState.targetHighY=nil; shadowState.highYStartTime=nil; shadowState.lastTargetY=nil
+	moneyFarmSavedPos=nil
 	task.wait(1)
 	local h=char:FindFirstChildOfClass("Humanoid")
 	if h then
@@ -1696,7 +1798,7 @@ HL.Size=UDim2.new(1,-55,1,0); HL.Position=UDim2.new(0,10,0,0)
 HL.BackgroundTransparency=1; HL.TextColor3=Color3.new(1,1,1)
 HL.Font=Enum.Font.GothamBlack; HL.TextSize=headerTextSize
 HL.TextXAlignment=Enum.TextXAlignment.Left
-HL.Text="⚡MarkiyanPro V67.1"..(IsMobile and " [📱]" or "")
+HL.Text="⚡MarkiyanPro V67.2"..(IsMobile and " [📱]" or "")
 
 local closeSize=isSmallScreen and 24 or 30
 local CB=Instance.new("TextButton",Header)
@@ -1915,7 +2017,7 @@ for _, def in ipairs(ShortcutDefs) do
 			if def.key=="Speed" and not Config.Speed then local h=GetHum(); if h then h.WalkSpeed=16 end end
 			if def.key=="HighJump" then local h=GetHum(); if h then h.UseJumpPower=true; h.JumpPower=Config.HighJump and Config.JumpPowerValue or 50 end end
 			if def.key=="SilentAim" and not Config.SilentAim then RestoreSilentAim() end
-			if def.key=="MoneyFarm" then moneyFarmStats.collected=0; moneyFarmStats.skippedSmall=0; Notify("💰 MONEY FARM",Config.MoneyFarm and "ON!" or "OFF",2) end
+			if def.key=="MoneyFarm" then moneyFarmStats.collected=0; moneyFarmStats.skippedSmall=0; moneyFarmSavedPos=nil; Notify("💰 MONEY FARM",Config.MoneyFarm and "ON!" or "OFF",2) end
 			if UpdFuncs[def.key] then UpdFuncs[def.key](Config[def.key]) end
 			SaveSettings(Config,ItemPickerState)
 		end)
@@ -2075,7 +2177,7 @@ local function AddToggle(tab, name, key, cbOn, cbOff)
 		end
 		if key=="Noclip" and not Config.Noclip then RestoreCollision() end
 		if key=="SilentAim" and not Config.SilentAim then RestoreSilentAim() end
-		if key=="MoneyFarm" then moneyFarmStats.collected=0; moneyFarmStats.skippedSmall=0; Notify("💰 MONEY FARM",Config.MoneyFarm and "ON!" or "OFF",2) end
+		if key=="MoneyFarm" then moneyFarmStats.collected=0; moneyFarmStats.skippedSmall=0; moneyFarmSavedPos=nil; Notify("💰 MONEY FARM",Config.MoneyFarm and "ON!" or "OFF",2) end
 		SaveSettings(Config,ItemPickerState); Notify(name,Config[key] and "ON ✓" or "OFF ✗",1.5)
 	end)
 	return Upd
@@ -2207,7 +2309,8 @@ AddTP("Move","SAFE ZONE",COORDS.SAFE_ZONE)
 -- MISC TAB
 -- ============================================================
 AddCategory("Misc","SURVIVAL")
-AddToggle("Misc","AUTO SAFE","AutoSafe")
+AddToggle("Misc","AUTO SAFE TP","AutoSafe")
+AddSlider("Misc","SAFE HP THRESHOLD",5,80,Config.SafeHealth,"SafeHealth")
 AddToggle("Misc","AUTO HEAL","Heal")
 AddCategory("Misc","FARM")
 AddToggle("Misc","AUTO FARM","Farm")
@@ -2217,20 +2320,26 @@ AddSlider("Misc","MAX HOLD(x100ms)",1,50,Config.FarmMaxHold or 20,"FarmMaxHold")
 AddSlider("Misc","BATCH SIZE(items/cycle)",1,20,Config.FarmBatchSize or 5,"FarmBatchSize")
 AddCategory("Misc","💰 MONEY FARM")
 AddToggle("Misc","💰 AUTO MONEY FARM","MoneyFarm",
-	function() moneyFarmStats.collected=0; moneyFarmStats.skippedSmall=0; Notify("💰 MONEY FARM","ON!",3) end,
-	function() Notify("💰 MONEY FARM","OFF",2) end)
+	function() moneyFarmStats.collected=0; moneyFarmStats.skippedSmall=0; moneyFarmSavedPos=nil; Notify("💰 MONEY FARM","ON!",3) end,
+	function() moneyFarmSavedPos=nil; Notify("💰 MONEY FARM","OFF",2) end)
 AddSlider("Misc","💰 MIN SUM ($)",0,5000,Config.MoneyMinSum or 0,"MoneyMinSum",function(v)
 	Config.MoneyMinSum=v
 end)
 AddAction("Misc","💰 COLLECT ALL MONEY NOW",Color3.fromRGB(140,110,0),function()
 	if not IsHumAlive() then Notify("💰","Ти мертвий!",2); return end
 	Notify("💰 COLLECT","Збираємо всі гроші...",3)
+	local root = GetRoot()
+	local savedPos = root and root.Position or nil
 	local bundles=GetAllCashBundles()
 	local count=0
 	for _, bundle in ipairs(bundles) do
 		if not IsHumAlive() then break end
 		if not bundle.Parent then continue end
 		CollectOneCashBundle(bundle); count=count+1; task.wait(0.08)
+	end
+	-- Повертаємось на збережену позицію
+	if savedPos and IsHumAlive() then
+		SafeTeleport(savedPos)
 	end
 	Notify("💰 COLLECT","Зібрано "..count.." бандлів!",3)
 end)
@@ -2748,4 +2857,4 @@ shadowState.HIGH_Y_DELAY=(Config.ShadowJumpDelay or 20)/10
 UpdateAllShortcuts()
 UpdateFlyBtns()
 
-Notify("⚡ V67.1","Farm lag fix + Money min sum + Silent Aim fix + Anti-AFK fix | M=меню",5)
+Notify("⚡ V67.2","Shield bypass + Auto Safe fix + Money return TP | M=меню",5)
