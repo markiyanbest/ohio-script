@@ -1,4 +1,4 @@
--- markiyanbest's script (V67 - OHIO PREDICTION AIM + ALL FIXES)
+-- markiyanbest's script (V67.1 - ALL FIXES: Farm lag fix, Money min sum, Silent Aim fix, Anti-AFK fix)
 local Players = game:GetService("Players")
 local lp = Players.LocalPlayer
 local RS = game:GetService("RunService")
@@ -262,17 +262,19 @@ local Config = {
 	ShadowTarget=nil, ShadowDepth=15, AutoSafe=false, SafeHealth=35,
 	SilentAim=false, AimFOV=200, AimPart="Head",
 	-- Ohio Prediction налаштування
-	AimPrediction=135,   -- x0.001 = 0.135 (Ohio ідеал 135-155)
-	AimSmooth=0,         -- 0 = жорсткий лок (Ohio стиль), >0 = плавний
-	AimWallCheck=true,   -- перевірка стін
+	AimPrediction=135,
+	AimSmooth=0,
+	AimWallCheck=true,
 	HighJump=false, JumpPowerValue=80,
 	MoneyFarm=false,
+	MoneyMinSum=0, -- НОВЕ: мінімальна сума бандла для збору
 	SC_Aim=IsMobile, SC_Silent=IsMobile, SC_Fly=IsMobile,
 	SC_Noclip=IsMobile, SC_Speed=IsMobile, SC_Farm=IsMobile,
 	SC_Shadow=IsMobile, SC_HighJump=IsMobile, SC_Safe=false,
 	SC_MoneyFarm=IsMobile,
 	_SafeTP=false, FarmRange=900,
 	FarmDelay=18, FarmMaxHold=20,
+	FarmBatchSize=5, -- НОВЕ: скільки предметів обробляти за один цикл (менше = менше фрізів)
 	ThemeIndex=1,
 	ShadowJumpDelay=20,
 }
@@ -525,10 +527,10 @@ local function SafeFirePrompt(prompt, attempts)
 end
 
 -- ============================================================
--- CASH BUNDLE FARM
+-- CASH BUNDLE FARM (з мінімальною сумою)
 -- ============================================================
 local moneyFarmRunning = false
-local moneyFarmStats = {collected=0, total=0}
+local moneyFarmStats = {collected=0, total=0, skippedSmall=0}
 
 local function GetAllCashBundles()
 	local bundles = {}
@@ -565,12 +567,52 @@ local function GetBundlePosition(bundle)
 	return nil
 end
 
+-- Спроба визначити суму бандла (через BillboardGui, IntValue, або Name)
+local function GetBundleValue(bundle)
+	if not bundle or not bundle.Parent then return 0 end
+	-- Перевіряємо IntValue/NumberValue всередині
+	for _, child in ipairs(bundle:GetChildren()) do
+		if child:IsA("IntValue") or child:IsA("NumberValue") then
+			if child.Value and child.Value > 0 then
+				return child.Value
+			end
+		end
+	end
+	-- Перевіряємо BillboardGui з текстом суми
+	for _, child in ipairs(bundle:GetDescendants()) do
+		if child:IsA("TextLabel") then
+			local text = child.Text or ""
+			local numStr = text:gsub("[^%d]","")
+			if numStr ~= "" then
+				local num = tonumber(numStr)
+				if num and num > 0 then return num end
+			end
+		end
+	end
+	-- Перевіряємо ім'я
+	local nameNum = bundle.Name:gsub("[^%d]","")
+	if nameNum ~= "" then
+		local num = tonumber(nameNum)
+		if num and num > 0 then return num end
+	end
+	-- Не вдалось визначити — повертаємо 0 (збиратиме якщо мін = 0)
+	return 0
+end
+
 local function CollectOneCashBundle(bundle)
 	if not bundle or not bundle.Parent then return false end
 	local pos=GetBundlePosition(bundle)
 	if not pos then return false end
 	local root=GetRoot()
 	if not root then return false end
+	-- Перевірка мінімальної суми
+	if Config.MoneyMinSum > 0 then
+		local val = GetBundleValue(bundle)
+		if val > 0 and val < Config.MoneyMinSum then
+			moneyFarmStats.skippedSmall = moneyFarmStats.skippedSmall + 1
+			return false
+		end
+	end
 	local ok=pcall(function()
 		local char=GetChar()
 		if char then char:PivotTo(CFrame.new(pos+Vector3.new(0,2.5,0)))
@@ -612,7 +654,7 @@ end
 
 task.spawn(function()
 	while true do
-		task.wait(0.1)
+		task.wait(0.15)
 		if not Config.MoneyFarm then
 			moneyFarmRunning=false
 			task.wait(0.5)
@@ -639,7 +681,7 @@ task.spawn(function()
 			if not bundle.Parent then continue end
 			CollectOneCashBundle(bundle)
 			moneyFarmStats.collected=moneyFarmStats.collected+1
-			task.wait(0.05)
+			task.wait(0.08)
 		end
 		moneyFarmRunning=false
 		task.wait(1.5)
@@ -679,7 +721,6 @@ local function ScreenDist(part)
 	return (Vector2.new(pos.X, pos.Y) - center).Magnitude
 end
 
--- Wall Check (Ohio стиль) — raycast від камери до цілі
 local function WallCheck(targetPosition)
 	if not Config.AimWallCheck then return true end
 	local origin = Camera.CFrame.Position
@@ -697,21 +738,18 @@ local function WallCheck(targetPosition)
 	rayParams.IgnoreWater = true
 	local result = workspace:Raycast(origin, direction, rayParams)
 	if result then
-		-- Якщо потрапили в гравця — стіни немає
 		local hitCharacter = result.Instance:FindFirstAncestorOfClass("Model")
 		if hitCharacter and hitCharacter:FindFirstChildOfClass("Humanoid") then
 			return true
 		end
-		return false -- Потрапили в стіну або об'єкт
+		return false
 	end
-	return true -- Нічого не заважає
+	return true
 end
 
--- Знаходить найближчого гравця до прицілу/миші (Ohio стиль)
 local function FindNewTarget()
 	local fov = Config.AimFOV
 	local best, bestDist = nil, math.huge
-	-- Позиція миші для PC (як в Ohio скрипті)
 	local mousePos = nil
 	if IsPC then
 		mousePos = UIS:GetMouseLocation()
@@ -725,12 +763,9 @@ local function FindNewTarget()
 		if IsPlayerInvincible(p) then continue end
 		local part = FindAimPart(char)
 		if not part then continue end
-		-- Перевіряємо чи гравець на екрані
 		local screenPoint, onScreen = Camera:WorldToViewportPoint(part.Position)
 		if not onScreen then continue end
-		-- Wall check (Ohio стиль)
 		if not WallCheck(part.Position) then continue end
-		-- Відстань від миші (PC) або від центру екрану (Mobile)
 		local distFromAim
 		if IsPC and mousePos then
 			distFromAim = (Vector2.new(screenPoint.X, screenPoint.Y) - mousePos).Magnitude
@@ -746,7 +781,6 @@ local function FindNewTarget()
 	return best
 end
 
--- Перевіряє чи поточна ціль ще валідна
 local function IsCurrentTargetValid()
 	if not aimTarget then return false end
 	if not aimTarget.Parent then return false end
@@ -757,46 +791,37 @@ local function IsCurrentTargetValid()
 	if IsPlayerInvincible(aimTarget) then return false end
 	local part = FindAimPart(char)
 	if not part then return false end
-	-- Wall check в реальному часі (якщо ціль зайшла за стіну — скидаємо)
 	if not WallCheck(part.Position) then return false end
 	return true
 end
 
--- Повертає CHARACTER цілі для аімботу
--- Не використовує aimHasLockedOnce — завжди шукає нову ціль якщо поточна пропала
 local function GetBestAimTarget()
-	if not Config.AimActive then
+	if not Config.AimActive and not Config.SilentAim then
 		aimTarget = nil
 		aimLocked = false
 		aimLostFrames = 0
 		return nil
 	end
-	-- Якщо є поточна ціль — перевіряємо її
 	if aimTarget and aimLocked then
 		if IsCurrentTargetValid() then
 			local char = aimTarget.Character
 			local part = FindAimPart(char)
 			if part then
 				local sd = ScreenDist(part)
-				-- Ціль у розширеному FOV — залишаємось на ній
 				if sd <= Config.AimFOV * 3 then
 					aimLostFrames = 0
 					return char
 				end
-				-- Ціль вийшла за FOV — рахуємо кадри втрати
 				aimLostFrames = aimLostFrames + 1
 				if aimLostFrames < aimLostMax then
-					return char -- ще тримаємо ціль
+					return char
 				end
-				-- Досягли ліміту кадрів — скидаємо і шукаємо нову
 			end
 		end
-		-- Ціль недійсна або за стіною або далеко — скидаємо
 		aimTarget = nil
 		aimLocked = false
 		aimLostFrames = 0
 	end
-	-- Шукаємо нову ціль (без затримки якщо стара щойно пропала)
 	local now = tick()
 	if now - aimLastSwitch < aimSwitchCD then return nil end
 	local best = FindNewTarget()
@@ -838,11 +863,16 @@ end)
 
 local MobUp, MobDn = false, false
 
+-- ============================================================
+-- SILENT AIM — ВИПРАВЛЕНИЙ (правильна snap-restore логіка)
+-- ============================================================
 local isShooting = false
 local shootTouches = {}
 local silentOrigCF = nil
 local silentActive = false
 local prevShooting = false
+local silentSnapTime = 0
+local SILENT_SNAP_DURATION = 0.08 -- як довго тримати snap камери (секунди)
 
 UIS.TouchStarted:Connect(function(inp, gpe)
 	if gpe then return end
@@ -854,15 +884,18 @@ UIS.TouchEnded:Connect(function(inp)
 	isShooting = (next(shootTouches) ~= nil)
 end)
 
-local function StartSilentAim()
-	if silentActive or not Config.SilentAim then return end
+-- Silent Aim: при натисканні стрільби миттєво повертає камеру на ціль на 1 кадр, потім повертає назад
+local function DoSilentSnap()
+	if not Config.SilentAim then return end
 	local tc = GetBestAimTarget()
 	if not tc then return end
 	local head = FindAimPart(tc)
 	if not head then return end
-	silentActive = true
+	-- Зберігаємо оригінальну камеру ПЕРЕД snap
 	silentOrigCF = Camera.CFrame
-	-- Silent Aim також використовує Ohio prediction
+	silentActive = true
+	silentSnapTime = tick()
+	-- Обчислюємо predicted position
 	local vel = Vector3.zero
 	pcall(function()
 		local rootPart = tc:FindFirstChild("HumanoidRootPart")
@@ -870,26 +903,35 @@ local function StartSilentAim()
 	end)
 	local prediction = Config.AimPrediction / 1000
 	local predPos = head.Position + (vel * prediction)
+	-- SNAP камеру на ціль
 	Camera.CFrame = CFrame.new(Camera.CFrame.Position, predPos)
 end
 
-local function StopSilentAim()
+local function RestoreSilentAim()
 	if not silentActive then return end
 	silentActive = false
-	if silentOrigCF then Camera.CFrame = silentOrigCF; silentOrigCF = nil end
+	if silentOrigCF then
+		Camera.CFrame = silentOrigCF
+		silentOrigCF = nil
+	end
 end
 
+-- Silent Aim RenderStepped — snap тільки на момент стрільби
 RS.RenderStepped:Connect(function()
 	if not Config.SilentAim then
-		if silentActive then StopSilentAim() end
+		if silentActive then RestoreSilentAim() end
+		prevShooting = false
 		return
 	end
 	local shooting = IsPC and UIS:IsMouseButtonPressed(Enum.UserInputType.MouseButton1) or isShooting
 	if shooting and not prevShooting then
-		StartSilentAim()
+		-- Початок стрільби — snap
+		DoSilentSnap()
 	elseif not shooting and prevShooting then
-		StopSilentAim()
+		-- Кінець стрільби — restore
+		RestoreSilentAim()
 	elseif shooting and silentActive then
+		-- Під час стрільби тримаємо snap на цілі (оновлюємо позицію цілі)
 		local tc = GetBestAimTarget()
 		if tc then
 			local head = FindAimPart(tc)
@@ -903,7 +945,17 @@ RS.RenderStepped:Connect(function()
 				local predPos = head.Position + (vel * prediction)
 				Camera.CFrame = CFrame.new(Camera.CFrame.Position, predPos)
 			end
+		else
+			-- Ціль зникла — restore
+			RestoreSilentAim()
 		end
+	elseif not shooting and silentActive then
+		-- Якщо стрільба закінчилась але snap ще активний — restore
+		RestoreSilentAim()
+	end
+	-- Авто-restore якщо snap тримається занадто довго (захист)
+	if silentActive and (tick() - silentSnapTime) > 0.5 then
+		RestoreSilentAim()
 	end
 	prevShooting = shooting
 end)
@@ -991,15 +1043,55 @@ task.spawn(function()
 	end
 end)
 
+-- ============================================================
+-- ANTI-AFK — ПОСИЛЕНИЙ (3 методи)
+-- ============================================================
+-- Метод 1: lp.Idled
 lp.Idled:Connect(function()
 	if Config.AntiAFK then
-		pcall(function() VirtualUser:CaptureController(); VirtualUser:ClickButton2(Vector2.new()) end)
+		pcall(function()
+			VirtualUser:CaptureController()
+			VirtualUser:ClickButton2(Vector2.new())
+		end)
 	end
 end)
+
+-- Метод 2: Таймер кожні 50 секунд
 task.spawn(function()
 	while task.wait(50) do
 		if Config.AntiAFK then
-			pcall(function() VirtualUser:CaptureController(); VirtualUser:ClickButton2(Vector2.new()) end)
+			pcall(function()
+				VirtualUser:CaptureController()
+				VirtualUser:ClickButton2(Vector2.new())
+			end)
+		end
+	end
+end)
+
+-- Метод 3: Додатковий таймер кожні 120 секунд (клік + рух миші)
+task.spawn(function()
+	while task.wait(120) do
+		if Config.AntiAFK then
+			pcall(function()
+				VirtualUser:CaptureController()
+				VirtualUser:ClickButton2(Vector2.new(0,0))
+				VirtualUser:SetKeyDown(0x77) -- W key
+				task.wait(0.1)
+				VirtualUser:SetKeyUp(0x77)
+			end)
+		end
+	end
+end)
+
+-- Метод 4: Ще один Idled ловлячий з короткою затримкою
+task.spawn(function()
+	while task.wait(180) do
+		if Config.AntiAFK then
+			pcall(function()
+				VirtualUser:Button2Down(Vector2.new(0,0), Camera.CFrame)
+				task.wait(0.1)
+				VirtualUser:Button2Up(Vector2.new(0,0), Camera.CFrame)
+			end)
 		end
 	end
 end)
@@ -1159,16 +1251,50 @@ local function RestoreCollision()
 end
 
 -- ============================================================
--- AUTO FARM — повторні натискання для кращого підбирання
+-- AUTO FARM — ВИПРАВЛЕНИЙ (менше фрізів, батчевий підхід, кешований список промтів)
 -- ============================================================
 local farmRunning = false
 local farmStats = {collected=0, skipped=0, lastItem=""}
+
+-- Кешований список ProximityPrompt — оновлюється рідше ніж кожен кадр
+local cachedPrompts = {}
+local lastPromptScan = 0
+local PROMPT_SCAN_INTERVAL = 1.5 -- сканувати workspace кожні 1.5 секунди замість кожного кадру
+
+local function ScanPrompts()
+	local now = tick()
+	if now - lastPromptScan < PROMPT_SCAN_INTERVAL then return cachedPrompts end
+	lastPromptScan = now
+	local newList = {}
+	-- Скануємо з yield щоб не фрізити
+	local count = 0
+	for _, v in pairs(workspace:GetDescendants()) do
+		if v:IsA("ProximityPrompt") then
+			table.insert(newList, v)
+		end
+		count = count + 1
+		-- Yield кожні 500 об'єктів щоб не було lag spike
+		if count % 500 == 0 then
+			task.wait()
+		end
+	end
+	cachedPrompts = newList
+	return cachedPrompts
+end
+
+-- Початкове сканування в окремому потоці
+task.spawn(function()
+	while true do
+		ScanPrompts()
+		task.wait(PROMPT_SCAN_INTERVAL)
+	end
+end)
 
 task.spawn(function()
 	local failedPrompts = {}
 	local FAIL_TIMEOUT = 8
 	while true do
-		task.wait(0.08)
+		task.wait(0.15) -- збільшено з 0.08 для менших фрізів
 		if not Config.Farm then
 			farmRunning=false
 			failedPrompts={}
@@ -1185,7 +1311,11 @@ task.spawn(function()
 		for k, t in pairs(failedPrompts) do
 			if now-t>FAIL_TIMEOUT then failedPrompts[k]=nil end
 		end
-		for _, v in pairs(workspace:GetDescendants()) do
+		-- Використовуємо кешований список промтів замість workspace:GetDescendants()
+		local prompts = cachedPrompts
+		local batchCount = 0
+		local maxBatch = Config.FarmBatchSize or 5
+		for _, v in pairs(prompts) do
 			if not v:IsA("ProximityPrompt") then continue end
 			local uid=tostring(v)
 			if failedPrompts[uid] then continue end
@@ -1201,14 +1331,20 @@ task.spawn(function()
 			else
 				table.insert(normalList, entry)
 			end
+			batchCount = batchCount + 1
+			-- Обмежуємо кількість перевірених промтів за цикл
+			if batchCount >= maxBatch * 3 then break end
 		end
 		table.sort(priorityList, function(a,b) return a.dist<b.dist end)
 		table.sort(normalList, function(a,b) return a.dist<b.dist end)
 		local allEntries={}
 		for _, e in ipairs(priorityList) do table.insert(allEntries,e) end
 		for _, e in ipairs(normalList) do table.insert(allEntries,e) end
-		if #allEntries==0 then task.wait(0.5); continue end
+		if #allEntries==0 then task.wait(0.8); continue end -- збільшено з 0.5
+		-- Обробляємо тільки batchSize предметів за один цикл
+		local processed = 0
 		for _, entry in ipairs(allEntries) do
+			if processed >= maxBatch then break end
 			if not Config.Farm or not IsHumAlive() then break end
 			local prompt=entry.prompt
 			if not prompt or not prompt.Parent then continue end
@@ -1220,10 +1356,10 @@ task.spawn(function()
 			local dist=(myRoot.Position-pos).Magnitude
 			if dist>12 then
 				SafeTeleport(pos)
-				task.wait(0.28)
+				task.wait(0.35) -- збільшено з 0.28
 			else
 				pcall(function() myRoot.CFrame=CFrame.new(pos+Vector3.new(0,1,0)) end)
-				task.wait(0.1)
+				task.wait(0.15) -- збільшено з 0.1
 			end
 			if not Config.Farm or not IsHumAlive() then break end
 			if not prompt or not prompt.Parent then continue end
@@ -1237,7 +1373,7 @@ task.spawn(function()
 				farmStats.skipped=farmStats.skipped+1
 				continue
 			end
-			local attempts = holdTime>0 and 1 or 4
+			local attempts = holdTime>0 and 1 or 3 -- зменшено з 4 до 3
 			local attemptDone=false
 			local collected=false
 			task.spawn(function()
@@ -1264,16 +1400,19 @@ task.spawn(function()
 				failedPrompts[entry.uid]=tick()
 				farmStats.skipped=farmStats.skipped+1
 			end
+			processed = processed + 1
 			local farmDelay=(Config.FarmDelay or 18)/100
 			task.wait(farmDelay)
+			-- Додатковий yield між предметами для зменшення фрізів
+			task.wait(0.05)
 		end
 		farmRunning=false
-		task.wait(0.1)
+		task.wait(0.2)
 	end
 end)
 
 -- ============================================================
--- SHADOW MAGNET — не реагує на стрибки
+-- SHADOW MAGNET
 -- ============================================================
 local shadowState = {
 	targetHighY=nil,
@@ -1322,17 +1461,13 @@ RS:BindToRenderStep("MrkAim", 2000, function()
 		local target = GetBestAimTarget()
 		local part = target and FindAimPart(target)
 		if part then
-			-- Отримуємо швидкість цілі через HumanoidRootPart (як в Ohio)
 			local vel = Vector3.zero
 			pcall(function()
 				local rootPart = target:FindFirstChild("HumanoidRootPart")
 				if rootPart then vel = rootPart.AssemblyLinearVelocity end
 			end)
-			-- Ohio Prediction: позиція + швидкість × предікт (Config зберігає x1000)
 			local prediction = Config.AimPrediction / 1000
 			local predictedPosition = part.Position + (vel * prediction)
-			-- Якщо AimSmooth = 0 — жорсткий CamLock (Ohio стиль)
-			-- Якщо AimSmooth > 0 — плавний лок
 			if Config.AimSmooth > 0 then
 				local smooth = Config.AimSmooth / 100
 				Camera.CFrame = Camera.CFrame:Lerp(
@@ -1340,12 +1475,10 @@ RS:BindToRenderStep("MrkAim", 2000, function()
 					smooth
 				)
 			else
-				-- Жорсткий Camera Lock (Ohio оригінал)
 				Camera.CFrame = CFrame.new(Camera.CFrame.Position, predictedPosition)
 			end
 		end
 	else
-		-- Коли AimActive вимкнено — завжди скидаємо стан
 		aimTarget=nil; aimLocked=false; aimLostFrames=0
 	end
 end)
@@ -1379,7 +1512,7 @@ RS.Heartbeat:Connect(function(dt)
 			end
 		end
 	end
-	-- Shadow Magnet — непомітний (не реагує на стрибки)
+	-- Shadow Magnet
 	if Config.ShadowMagnet then
 		if not shadowSavedPos then shadowSavedPos=root.Position end
 		if not IsTargetAlive(Config.ShadowTarget) or IsPlayerInvincible(Config.ShadowTarget) then
@@ -1455,7 +1588,7 @@ RS.Heartbeat:Connect(function(dt)
 			shadowState.targetHighY=nil; shadowState.highYStartTime=nil; shadowState.lastTargetY=nil
 		end
 	end
-	-- Magnet звичайний (пропускає гравців зі щитом)
+	-- Magnet звичайний
 	if Config.Magnet and not Config.ShadowMagnet then
 		if not IsTargetAlive(Config.MagnetTarget) or IsPlayerInvincible(Config.MagnetTarget) then
 			Config.MagnetTarget=GetClosestByDist()
@@ -1563,7 +1696,7 @@ HL.Size=UDim2.new(1,-55,1,0); HL.Position=UDim2.new(0,10,0,0)
 HL.BackgroundTransparency=1; HL.TextColor3=Color3.new(1,1,1)
 HL.Font=Enum.Font.GothamBlack; HL.TextSize=headerTextSize
 HL.TextXAlignment=Enum.TextXAlignment.Left
-HL.Text="⚡MarkiyanPro V67"..(IsMobile and " [📱]" or "")
+HL.Text="⚡MarkiyanPro V67.1"..(IsMobile and " [📱]" or "")
 
 local closeSize=isSmallScreen and 24 or 30
 local CB=Instance.new("TextButton",Header)
@@ -1642,7 +1775,7 @@ task.spawn(function()
 		if Config.MoneyFarm then
 			local bundles=GetAllCashBundles()
 			moneyFarmStatusLabel.Visible=true
-			moneyFarmStatusLabel.Text=string.format("💰 MONEY FARM | Зібрано: %d | Бандлів: %d",moneyFarmStats.collected,#bundles)
+			moneyFarmStatusLabel.Text=string.format("💰 MONEY FARM | Зібрано: %d | Бандлів: %d | Skip: %d",moneyFarmStats.collected,#bundles,moneyFarmStats.skippedSmall)
 		else
 			moneyFarmStatusLabel.Visible=false
 		end
@@ -1781,8 +1914,8 @@ for _, def in ipairs(ShortcutDefs) do
 			if def.key=="ESP" and not Config.ESP then ClearAllESP() end
 			if def.key=="Speed" and not Config.Speed then local h=GetHum(); if h then h.WalkSpeed=16 end end
 			if def.key=="HighJump" then local h=GetHum(); if h then h.UseJumpPower=true; h.JumpPower=Config.HighJump and Config.JumpPowerValue or 50 end end
-			if def.key=="SilentAim" and not Config.SilentAim then StopSilentAim() end
-			if def.key=="MoneyFarm" then moneyFarmStats.collected=0; Notify("💰 MONEY FARM",Config.MoneyFarm and "ON!" or "OFF",2) end
+			if def.key=="SilentAim" and not Config.SilentAim then RestoreSilentAim() end
+			if def.key=="MoneyFarm" then moneyFarmStats.collected=0; moneyFarmStats.skippedSmall=0; Notify("💰 MONEY FARM",Config.MoneyFarm and "ON!" or "OFF",2) end
 			if UpdFuncs[def.key] then UpdFuncs[def.key](Config[def.key]) end
 			SaveSettings(Config,ItemPickerState)
 		end)
@@ -1941,8 +2074,8 @@ local function AddToggle(tab, name, key, cbOn, cbOff)
 			else Config.ShadowTarget=nil end
 		end
 		if key=="Noclip" and not Config.Noclip then RestoreCollision() end
-		if key=="SilentAim" and not Config.SilentAim then StopSilentAim() end
-		if key=="MoneyFarm" then moneyFarmStats.collected=0; Notify("💰 MONEY FARM",Config.MoneyFarm and "ON!" or "OFF",2) end
+		if key=="SilentAim" and not Config.SilentAim then RestoreSilentAim() end
+		if key=="MoneyFarm" then moneyFarmStats.collected=0; moneyFarmStats.skippedSmall=0; Notify("💰 MONEY FARM",Config.MoneyFarm and "ON!" or "OFF",2) end
 		SaveSettings(Config,ItemPickerState); Notify(name,Config[key] and "ON ✓" or "OFF ✗",1.5)
 	end)
 	return Upd
@@ -2024,16 +2157,14 @@ AddCategory("Combat","AIMING (OHIO PREDICTION)")
 AddToggle("Combat","AIM LOCK","AimActive",
 	function() aimTarget=nil; aimLocked=false; aimLostFrames=0 end,
 	function() aimTarget=nil; aimLocked=false; aimLostFrames=0 end)
-AddToggle("Combat","SILENT AIM","SilentAim",nil,function() StopSilentAim() end)
+AddToggle("Combat","SILENT AIM","SilentAim",nil,function() RestoreSilentAim() end)
 AddToggle("Combat","WALL CHECK","AimWallCheck")
 AddToggle("Combat","ESP","ESP",nil,function() ClearAllESP() end)
 AddCategory("Combat","AIM CONFIG")
 AddSlider("Combat","FOV",50,500,Config.AimFOV,"AimFOV",function(v) Config.AimFOV=v; UpdateFOV() end)
--- Prediction слайдер: 100-250 (x0.001 = 0.100-0.250), ідеал Ohio 135-155
 AddSlider("Combat","PREDICTION(x0.001)",100,250,Config.AimPrediction,"AimPrediction",function(v)
 	Config.AimPrediction=v
 end)
--- Smooth слайдер: 0 = жорсткий лок (Ohio оригінал), 1-50 = плавний
 AddSlider("Combat","SMOOTH(0=hard lock)",0,50,Config.AimSmooth,"AimSmooth",function(v)
 	Config.AimSmooth=v
 end)
@@ -2083,10 +2214,14 @@ AddToggle("Misc","AUTO FARM","Farm")
 AddSlider("Misc","FARM RANGE",50,2000,Config.FarmRange or 900,"FarmRange")
 AddSlider("Misc","FARM DELAY(x10ms)",1,100,Config.FarmDelay or 18,"FarmDelay")
 AddSlider("Misc","MAX HOLD(x100ms)",1,50,Config.FarmMaxHold or 20,"FarmMaxHold")
+AddSlider("Misc","BATCH SIZE(items/cycle)",1,20,Config.FarmBatchSize or 5,"FarmBatchSize")
 AddCategory("Misc","💰 MONEY FARM")
 AddToggle("Misc","💰 AUTO MONEY FARM","MoneyFarm",
-	function() moneyFarmStats.collected=0; Notify("💰 MONEY FARM","ON!",3) end,
+	function() moneyFarmStats.collected=0; moneyFarmStats.skippedSmall=0; Notify("💰 MONEY FARM","ON!",3) end,
 	function() Notify("💰 MONEY FARM","OFF",2) end)
+AddSlider("Misc","💰 MIN SUM ($)",0,5000,Config.MoneyMinSum or 0,"MoneyMinSum",function(v)
+	Config.MoneyMinSum=v
+end)
 AddAction("Misc","💰 COLLECT ALL MONEY NOW",Color3.fromRGB(140,110,0),function()
 	if not IsHumAlive() then Notify("💰","Ти мертвий!",2); return end
 	Notify("💰 COLLECT","Збираємо всі гроші...",3)
@@ -2095,7 +2230,7 @@ AddAction("Misc","💰 COLLECT ALL MONEY NOW",Color3.fromRGB(140,110,0),function
 	for _, bundle in ipairs(bundles) do
 		if not IsHumAlive() then break end
 		if not bundle.Parent then continue end
-		CollectOneCashBundle(bundle); count=count+1; task.wait(0.05)
+		CollectOneCashBundle(bundle); count=count+1; task.wait(0.08)
 	end
 	Notify("💰 COLLECT","Зібрано "..count.." бандлів!",3)
 end)
@@ -2536,7 +2671,7 @@ UIS.InputBegan:Connect(function(inp, gpe)
 			Config.SilentAim=not Config.SilentAim
 			if UpdFuncs.SilentAim then UpdFuncs.SilentAim(Config.SilentAim) end
 			UpdateAllShortcuts()
-			if not Config.SilentAim then StopSilentAim() end
+			if not Config.SilentAim then RestoreSilentAim() end
 		end
 	end
 end)
@@ -2556,7 +2691,6 @@ Instance.new("UICorner",MB)
 local MBstroke=Instance.new("UIStroke",MB)
 MBstroke.Color=Color3.new(1,1,1); MBstroke.Thickness=1.5
 
--- Пульсація М кнопки
 task.spawn(function()
 	while true do
 		local theme=ColorThemes[currentThemeIndex]
@@ -2610,9 +2744,8 @@ if Config.Speed then
 	local h=GetHum()
 	if h then h.WalkSpeed=Config.WalkSpeedValue end
 end
--- Встановлюємо початковий HIGH_Y_DELAY з конфігу
 shadowState.HIGH_Y_DELAY=(Config.ShadowJumpDelay or 20)/10
 UpdateAllShortcuts()
 UpdateFlyBtns()
 
-Notify("⚡ V67","Ohio Prediction Aim + Wall Check + All Fixes | M=меню",5)
+Notify("⚡ V67.1","Farm lag fix + Money min sum + Silent Aim fix + Anti-AFK fix | M=меню",5)
