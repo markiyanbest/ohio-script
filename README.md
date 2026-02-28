@@ -228,7 +228,7 @@ local currentThemeIndex = 1
 -- ============================================================
 -- SAVE / LOAD
 -- ============================================================
-local SAVE_KEY = "MarkiyanProV67_Settings"
+local SAVE_KEY = "dimensityV67_Settings"
 local function SaveSettings(config, itemPicker)
 	pcall(function()
 		local data = {config={}, itemPicker={}}
