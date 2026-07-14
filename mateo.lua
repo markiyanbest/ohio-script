@@ -1,7 +1,6 @@
 -- ██████████████████████████████████████████████████████████
 -- ██  OMNI V305 — GHOST EDITION (STEALTH HOOK FIX)         ██
 -- ██  Fixes: Freecam Mouse, Safe Server Hop, CFrame Spider ██
--- ██  Added: Universal Trigger Bot (PvP & PvE)             ██
 -- ██████████████████████████████████████████████████████████
 
 local Players           = game:GetService("Players")
@@ -32,7 +31,8 @@ local Strings = {
         hdr_save_config = "SAVE CONFIG", hdr_speed_vals = "SPEED VALUES", hdr_jump_vals = "JUMP VALUES",
         hdr_hitbox_cfg = "HITBOX", hdr_aim_settings = "AIM SETTINGS", hdr_anti_void = "ANTI-VOID",
         hdr_anti_ban = "ANTI-BAN", hdr_language = "LANGUAGE",
-        lbl_auto_aim = "Auto Aim", lbl_silent_aim = "Silent Aim", lbl_trigger_bot = "Trigger Bot", lbl_shadow_lock = "Magnet (ShadowLock)",
+        lbl_auto_aim = "Auto Aim", lbl_silent_aim = "Silent Aim", lbl_shadow_lock = "Magnet (ShadowLock)",
+        lbl_triggerbot = "Triggerbot", 
         lbl_hitbox = "Hitbox Expand", lbl_esp = "ESP", lbl_fly = "Fly (CFrame)", lbl_freecam = "Freecam",
         lbl_speed = "Speed (CFrame)", lbl_bhop = "Bhop", lbl_high_jump = "High Jump",
         lbl_infinite_jump = "Infinite Jump", lbl_noclip = "Noclip", lbl_no_fall = "No Fall Damage",
@@ -43,8 +43,8 @@ local Strings = {
         desc_spider = "Walk into any wall and hold W to climb up it automatically.",
         desc_auto_aim = "Automatically aims your camera at the nearest visible enemy within FOV radius.",
         desc_silent_aim = "Redirects raycasts to enemies without moving your camera. Requires exploit hooks.",
-        desc_trigger_bot = "Automatically clicks/shoots when your crosshair is on an enemy (PvP/PvE).",
         desc_shadow_lock = "Teleports you behind the closest enemy. Returns you to start position when disabled.",
+        desc_triggerbot = "Automatically fires weapon when crosshair is over an enemy.",
         desc_hitbox = "Expands enemy hitbox parts so they are easier to hit.",
         desc_esp = "Shows player name, HP and distance as clean text. No boxes.",
         desc_fly = "Free flight using CFrame bypass. Undetected by velocity anti-cheats.",
@@ -104,8 +104,9 @@ local Strings = {
         hdr_save_config = "ЗБЕРЕЖЕННЯ КОНФІГУ", hdr_speed_vals = "ЗНАЧЕННЯ ШВИДКОСТІ",
         hdr_jump_vals = "ЗНАЧЕННЯ СТРИБКА", hdr_hitbox_cfg = "ХІТБОКС", hdr_aim_settings = "НАЛАШТУВАННЯ ПРИЦІЛУ",
         hdr_anti_void = "АНТИ-ВОЙД", hdr_anti_ban = "АНТИ-БАН", hdr_language = "МОВА",
-        lbl_auto_aim = "Авто Прицілювання", lbl_silent_aim = "Тихий Прицілювання", lbl_trigger_bot = "Трігер Бот",
-        lbl_shadow_lock = "Магніт (ShadowLock)", lbl_hitbox = "Розширення хітбокса", lbl_esp = "ESP",
+        lbl_auto_aim = "Авто Прицілювання", lbl_silent_aim = "Тихий Прицілювання",
+        lbl_shadow_lock = "Магніт (ShadowLock)", lbl_triggerbot = "Триггербот", 
+        lbl_hitbox = "Розширення хітбокса", lbl_esp = "ESP",
         lbl_fly = "Літання (CFrame)", lbl_freecam = "Вільна камера", lbl_speed = "Швидкість (CFrame)", lbl_bhop = "Bhop",
         lbl_high_jump = "Високий стрибок", lbl_infinite_jump = "Нескінченний стрибок", lbl_noclip = "Нокліп",
         lbl_no_fall = "Без пошкодження від падіння", lbl_anti_void = "Анти-Войд",
@@ -117,8 +118,8 @@ local Strings = {
         desc_spider = "Просто йди на стіну і тримай W, щоб автоматично піднятися по ній.",
         desc_auto_aim = "Автоматично наводить камеру на найближчого видимого ворога в радіусі FOV.",
         desc_silent_aim = "Перенаправляє рейкасти на ворогів без руху камери. Потрібні хуки експлойту.",
-        desc_trigger_bot = "Автоматично стріляє (клікає), коли приціл наведений на ворога (PvP/PvE).",
         desc_shadow_lock = "Телепортує вас за найближчого ворога. При виключенні повертає на стартову позицію.",
+        desc_triggerbot = "Автоматично стріляє з зброї коли приціл на ворогу.",
         desc_hitbox = "Збільшує хітбокс частини ворогів, щоб в них було легше попасти.",
         desc_esp = "Показує нік гравця, HP та дистанцію чистим текстом. Без квадратів.",
         desc_fly = "Політ через CFrame обход. Не детектиться античитами швидкості.",
@@ -290,7 +291,6 @@ local Config = {
     FullBright        = false,
     FakeLagPower      = 50,
     SpiderSpeed       = 20,
-    TriggerBotDelay   = 0.1,
 }
 
 local Binds = {
@@ -301,24 +301,24 @@ local Binds = {
     ToggleMenu = Enum.KeyCode.M,
     FakeLag    = Enum.KeyCode.J,
     Freecam    = Enum.KeyCode.C,
-    TriggerBot = Enum.KeyCode.T,
+    Triggerbot = Enum.KeyCode.T,
 }
 
 local State = {
-    Fly = false, Aim = false, SilentAim = false, ShadowLock = false, TriggerBot = false,
+    Fly = false, Aim = false, SilentAim = false, ShadowLock = false,
     Noclip = false, Hitbox = false, Speed = false, Bhop = false,
     ESP = false, Spin = false, HighJump = false, Potato = false,
     FakeLag = false, Freecam = false, NoFallDamage = false,
     AntiAFK = false, InfiniteJump = false, AntiVoid = false,
     SpeedAntiBan = true, HitboxRandomize = true,
     AimAntiDetect = true, SafeSpeedMode = false,
-    FullBright = false, Spider = false,
+    FullBright = false, Spider = false, Triggerbot = false,
 }
 
 local CFG_FILE = "OmniV305_Ghost.json"
 local SAVE_STATE_KEYS = {
     "AntiAFK", "ESP", "Hitbox", "Speed", "HighJump",
-    "Bhop", "NoFallDamage", "InfiniteJump", "Potato", "AntiVoid", "Spider", "TriggerBot",
+    "Bhop", "NoFallDamage", "InfiniteJump", "Potato", "AntiVoid", "Spider",
 }
 local SAVE_CFG_KEYS = {
     "SpeedAntiBan", "HitboxRandomize", "AimAntiDetect", "SafeSpeedMode",
@@ -399,10 +399,10 @@ local function ResetConfig()
     Config.SpeedJitter = 1.5; Config.FlyHeightMax = 1800
     Config.SafeSpeedMode = false; Config.SafeSpeedMult = 1.8; Config.AntiVoidHeight = -180
     Config.ESPMaxDist = 1000; Config.AimPredictMult = 1.0; Config.FullBright = false
-    Config.FakeLagPower = 50; Config.SpiderSpeed = 20; Config.TriggerBotDelay = 0.1
+    Config.FakeLagPower = 50; Config.SpiderSpeed = 20
     Binds.Fly = Enum.KeyCode.F; Binds.Aim = Enum.KeyCode.G
     Binds.Noclip = Enum.KeyCode.V; Binds.SilentAim = Enum.KeyCode.B; Binds.ToggleMenu = Enum.KeyCode.M
-    Binds.Freecam = Enum.KeyCode.C; Binds.TriggerBot = Enum.KeyCode.T
+    Binds.Freecam = Enum.KeyCode.C; Binds.Triggerbot = Enum.KeyCode.T
     State.SpeedAntiBan = true; State.HitboxRandomize = true
     State.AimAntiDetect = true; State.SafeSpeedMode = false
     UpdateAllSliders(); Notify("Config", L("ntf_reset"), 2)
@@ -641,7 +641,6 @@ local function UpdateESP()
     local now = tick()
     if now - _espLastUpdate < ESP_UPDATE_INTERVAL then return end
     _espLastUpdate = now
-
     if not State.ESP then return end
 
     local myHRP = LP.Character and LP.Character:FindFirstChild("HumanoidRootPart")
@@ -650,16 +649,14 @@ local function UpdateESP()
         if p == LP then continue end
 
         local char = p.Character
-        local head = char and FindHead(char)
-        local hum  = char and char:FindFirstChildOfClass("Humanoid")
+        if not char then continue end
+        
+        local head = FindHead(char)
+        local hum = char:FindFirstChildOfClass("Humanoid")
 
-        if not char or not head or not hum or hum.Health <= 0 then
+        if not head or not hum or hum.Health <= 0 then
             if ESPCache[p] then
-                pcall(function()
-                    if ESPCache[p].bb and ESPCache[p].bb.Parent then
-                        ESPCache[p].bb:Destroy()
-                    end
-                end)
+                pcall(function() if ESPCache[p].bb then ESPCache[p].bb:Destroy() end end)
                 ESPCache[p] = nil
             end
             continue
@@ -667,114 +664,60 @@ local function UpdateESP()
 
         local ca = ESPCache[p]
         if not ca or not ca.bb or not ca.bb.Parent then
-            if ca then
-                pcall(function()
-                    if ca.bb and ca.bb.Parent then ca.bb:Destroy() end
-                end)
-            end
-
+            if ca and ca.bb then pcall(function() ca.bb:Destroy() end) end
+            
             local bb = Instance.new("BillboardGui")
             bb.Name = RndStr(8)
             bb.Size = UDim2.new(0, 120, 0, 44)
             bb.StudsOffset = Vector3.new(0, 2.8, 0)
             bb.AlwaysOnTop = true
-            bb.MaxDistance = Config.ESPMaxDist
             bb.LightInfluence = 0
             bb.ResetOnSpawn = false
             bb.Parent = head
 
-            local nameLbl = Instance.new("TextLabel", bb)
-            nameLbl.Name = "NameLbl"
+            local nameLbl = Instance.new("TextLabel")
             nameLbl.Size = UDim2.new(1, 0, 0, 18)
-            nameLbl.Position = UDim2.new(0, 0, 0, 0)
             nameLbl.BackgroundTransparency = 1
-            nameLbl.Text = p.Name
             nameLbl.Font = Enum.Font.GothamBold
             nameLbl.TextSize = 13
             nameLbl.TextColor3 = Color3.fromRGB(255, 255, 255)
             nameLbl.TextStrokeTransparency = 0.3
-            nameLbl.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
-            nameLbl.TextScaled = false
+            nameLbl.Parent = bb
 
-            local infoLbl = Instance.new("TextLabel", bb)
-            infoLbl.Name = "InfoLbl"
+            local infoLbl = Instance.new("TextLabel")
             infoLbl.Size = UDim2.new(1, 0, 0, 14)
             infoLbl.Position = UDim2.new(0, 0, 0, 20)
             infoLbl.BackgroundTransparency = 1
-            infoLbl.Text = "HP: ? | ?m"
             infoLbl.Font = Enum.Font.Gotham
             infoLbl.TextSize = 11
             infoLbl.TextColor3 = Color3.fromRGB(130, 255, 170)
             infoLbl.TextStrokeTransparency = 0.3
-            infoLbl.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
-            infoLbl.TextScaled = false
+            infoLbl.Parent = bb
 
-            local barBg = Instance.new("Frame", bb)
-            barBg.Name = "BarBg"
-            barBg.Size = UDim2.new(1, 0, 0, 3)
-            barBg.Position = UDim2.new(0, 0, 0, 36)
-            barBg.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-            barBg.BorderSizePixel = 0
-            Instance.new("UICorner", barBg).CornerRadius = UDim.new(1, 0)
-
-            local barFill = Instance.new("Frame", barBg)
-            barFill.Name = "BarFill"
-            barFill.Size = UDim2.new(1, 0, 1, 0)
-            barFill.BackgroundColor3 = Color3.fromRGB(0, 220, 100)
-            barFill.BorderSizePixel = 0
-            Instance.new("UICorner", barFill).CornerRadius = UDim.new(1, 0)
-
-            ESPCache[p] = {
-                bb      = bb,
-                nameLbl = nameLbl,
-                infoLbl = infoLbl,
-                barFill = barFill,
-            }
-            ca = ESPCache[p]
+            ca = { bb = bb, nameLbl = nameLbl, infoLbl = infoLbl }
+            ESPCache[p] = ca
         end
 
         ca.bb.MaxDistance = Config.ESPMaxDist
-
-        local hp     = math.max(0, math.floor(hum.Health))
-        local rawMax = hum.MaxHealth
-        local isInf  = rawMax ~= rawMax or rawMax == math.huge or rawMax > 1e9
-        local mxh    = isInf and math.max(1, hp) or math.max(1, math.floor(rawMax))
-        local ds     = myHRP and math.floor((myHRP.Position - head.Position).Magnitude) or 0
-        local ratio  = math.clamp(hp / mxh, 0, 1)
-
-        local nameColor
-        if ds <= 30 then
-            nameColor = Color3.fromRGB(255, 100, 100)
-        elseif ds <= 80 then
-            nameColor = Color3.fromRGB(255, 220, 50)
-        else
-            nameColor = Color3.fromRGB(255, 255, 255)
-        end
-        ca.nameLbl.TextColor3 = nameColor
         ca.nameLbl.Text = p.Name
-
-        local hpColor = ratio >= 0.6
-            and Color3.fromRGB(80, 255, 120)
-            or ratio >= 0.3
-                and Color3.fromRGB(255, 220, 40)
-                or Color3.fromRGB(255, 60, 60)
-
+        
+        local hp = math.max(0, math.floor(hum.Health))
+        local mxh = math.max(1, math.floor(hum.MaxHealth))
+        local ds = myHRP and math.floor((myHRP.Position - head.Position).Magnitude) or 0
+        local ratio = math.clamp(hp / mxh, 0, 1)
+        
+        local nameColor = (ds <= 30 and Color3.fromRGB(255, 100, 100)) or (ds <= 80 and Color3.fromRGB(255, 220, 50)) or Color3.fromRGB(255, 255, 255)
+        ca.nameLbl.TextColor3 = nameColor
+        
+        local hpColor = (ratio >= 0.6 and Color3.fromRGB(80, 255, 120)) or (ratio >= 0.3 and Color3.fromRGB(255, 220, 40)) or Color3.fromRGB(255, 60, 60)
         ca.infoLbl.TextColor3 = hpColor
-        local hpText = isInf and tostring(hp) or (hp .. "/" .. mxh)
-        ca.infoLbl.Text = "HP: " .. hpText .. " | " .. ds .. "m"
-
-        ca.barFill.Size = UDim2.new(ratio, 0, 1, 0)
-        ca.barFill.BackgroundColor3 = hpColor
+        ca.infoLbl.Text = "HP: " .. hp .. "/" .. mxh .. " | " .. ds .. "m"
     end
 end
 
 Players.PlayerRemoving:Connect(function(p)
     if ESPCache[p] then
-        pcall(function()
-            if ESPCache[p].bb and ESPCache[p].bb.Parent then
-                ESPCache[p].bb:Destroy()
-            end
-        end)
+        pcall(function() if ESPCache[p].bb and ESPCache[p].bb.Parent then ESPCache[p].bb:Destroy() end end)
         ESPCache[p] = nil
     end
 end)
@@ -782,11 +725,7 @@ end)
 Players.PlayerAdded:Connect(function(p)
     p.CharacterAdded:Connect(function()
         if ESPCache[p] then
-            pcall(function()
-                if ESPCache[p].bb and ESPCache[p].bb.Parent then
-                    ESPCache[p].bb:Destroy()
-                end
-            end)
+            pcall(function() if ESPCache[p].bb and ESPCache[p].bb.Parent then ESPCache[p].bb:Destroy() end end)
             ESPCache[p] = nil
         end
     end)
@@ -795,11 +734,7 @@ for _, p in pairs(Players:GetPlayers()) do
     if p ~= LP then
         p.CharacterAdded:Connect(function()
             if ESPCache[p] then
-                pcall(function()
-                    if ESPCache[p].bb and ESPCache[p].bb.Parent then
-                        ESPCache[p].bb:Destroy()
-                    end
-                end)
+                pcall(function() if ESPCache[p].bb and ESPCache[p].bb.Parent then ESPCache[p].bb:Destroy() end end)
                 ESPCache[p] = nil
             end
         end)
@@ -1228,7 +1163,6 @@ local function SetupSilentAimHook()
     local function newNamecall(self, ...)
         local method = getnamecallmethod()
         
-        -- Оптимізація: перевіряємо метод ТІЛЬКИ якщо він є в нашому списку
         if method == "Raycast" or method == "FindPartOnRay" or method == "FindPartOnRayWithIgnoreList" or method == "FindPartOnRayWithWhitelist" then
             if self == Workspace and State.SilentAim then
                 local args = {...}
@@ -1236,7 +1170,6 @@ local function SetupSilentAimHook()
                 local part = target and FindAimPart(target)
                 
                 if part then
-                    -- Розрахунок позиції з предиктом
                     local predPos = part.Position
                     if Config.AimPredictMult > 0 then
                         predPos = predPos + (part.AssemblyLinearVelocity * 0.05 * Config.AimPredictMult)
@@ -1249,7 +1182,6 @@ local function SetupSilentAimHook()
                         )
                     end
 
-                    -- Перехоплення сучасного Raycast
                     if method == "Raycast" then
                         local origin = args[1]
                         if typeof(origin) == "Vector3" then
@@ -1257,8 +1189,6 @@ local function SetupSilentAimHook()
                             args[2] = newDir.Unit * newDir.Magnitude
                             return oldNamecall(self, unpack(args))
                         end
-                        
-                    -- Перехоплення старих Ray (FindPartOnRay тощо)
                     else
                         local ray = args[1]
                         if typeof(ray) == "Ray" then
@@ -1291,52 +1221,6 @@ local function SetupSilentAimHook()
         return false
     end
 end
-
--- ============================================================
--- TRIGGER BOT LOOP (UNIVERSAL PvE/PvP)
--- ============================================================
-local _lastTb = 0
-task.spawn(function()
-    while task.wait(0.03) do
-        if not State.TriggerBot then continue end
-        local char = LP.Character
-        if not char or not char:FindFirstChild("Humanoid") or char.Humanoid.Health <= 0 then continue end
-        local now = tick()
-        if now - _lastTb < (Config.TriggerBotDelay or 0.1) then continue end
-
-        local ms = UIS:GetMouseLocation()
-        local unitRay = Camera:ViewportPointToRay(ms.X, ms.Y)
-        local rayParams = RaycastParams.new()
-        rayParams.FilterType = Enum.RaycastFilterType.Exclude
-        rayParams.FilterDescendantsInstances = {char, Camera}
-        
-        local hit = Workspace:Raycast(unitRay.Origin, unitRay.Direction * 1000, rayParams)
-        if hit and hit.Instance then
-            local model = hit.Instance:FindFirstAncestorOfClass("Model")
-            if model and model ~= char and model:FindFirstChildOfClass("Humanoid") then
-                local hum = model:FindFirstChildOfClass("Humanoid")
-                if hum.Health > 0 then
-                    -- Перевіряємо чи це гравець, і якщо гравець, то перевіряємо, щоб це не був сам LocalPlayer
-                    -- Якщо це NPC або моб, plr буде nil, і код піде далі
-                    local isAlly = false
-                    local plr = Players:GetPlayerFromCharacter(model)
-                    if plr and plr == LP then isAlly = true end
-                    
-                    if not isAlly then
-                        _lastTb = now
-                        pcall(function()
-                            if mouse1click then mouse1click() 
-                            else 
-                                VirtualUser:CaptureController()
-                                VirtualUser:ClickButton1(Vector2.new()) 
-                            end
-                        end)
-                    end
-                end
-            end
-        end
-    end
-end)
 
 local function Toggle(nm)
     if nm == "SpeedAntiBan" then
@@ -1429,16 +1313,14 @@ local function Toggle(nm)
         elseif nm == "Potato" then
             UndoPotato()
         elseif nm == "Freecam" then
-            pcall(function() 
-                local curR = LP.Character and LP.Character:FindFirstChild("HumanoidRootPart")
-                if curR then curR.Anchored = false end 
-            end)
+            pcall(function() if R then R.Anchored = false end end)
             task.spawn(function()
                 task.wait(0.05)
                 pcall(function()
                     Camera.CameraType = Enum.CameraType.Custom
                     local H2 = LP.Character and LP.Character:FindFirstChildOfClass("Humanoid")
                     if H2 then Camera.CameraSubject = H2 end
+                    UIS.MouseBehavior = Enum.MouseBehavior.Default
                 end)
             end)
         elseif nm == "Spin" and R then
@@ -1485,6 +1367,10 @@ local function Toggle(nm)
             local x, y = Camera.CFrame:ToEulerAnglesYXZ()
             FC_P = x; FC_Y = y
             pcall(function() if R then R.Anchored = true end end)
+            -- ВИПРАВЛЕНО: Тепер миша не блокується і можна натискати на GUI
+            if not IsMob then
+                UIS.MouseBehavior = Enum.MouseBehavior.Default
+            end
         elseif nm == "FakeLag" then
             _fakeLagToken += 1
             local myToken = _fakeLagToken
@@ -1628,7 +1514,7 @@ LP.CharacterAdded:Connect(function(char)
     aimTarget = nil; aimLocked = false; aimLostFrames = 0
     ncOrigCanCollide = {}; _lastSafePos = nil
 
-    for _, n in pairs({"Fly", "Noclip", "Freecam", "Spin", "FakeLag", "TriggerBot"}) do
+    for _, n in pairs({"Fly", "Noclip", "Freecam", "Spin", "FakeLag"}) do
         if State[n] then State[n] = false; UpdVis(n) end
     end
     _fakeLagToken += 1
@@ -2302,7 +2188,6 @@ local QuickBtnDefs = {
     {nm="Hitbox",       icon="📦", lbl="Hitbox"},
     {nm="Aim",          icon="🎯", lbl="AutoAim"},
     {nm="SilentAim",    icon="🔇", lbl="SilentAim"},
-    {nm="TriggerBot",   icon="🔫", lbl="TrigBot"},
     {nm="Bhop",         icon="🐇", lbl="Bhop"},
     {nm="HighJump",     icon="⬆️", lbl="HiJump"},
     {nm="InfiniteJump", icon="♾️", lbl="InfJump"},
@@ -2316,6 +2201,7 @@ local QuickBtnDefs = {
     {nm="Freecam",      icon="📷", lbl="FreeCam"},
     {nm="Potato",       icon="🥔", lbl="Potato"},
     {nm="Spider",       icon="🕷", lbl="Spider"},
+    {nm="Triggerbot",   icon="🔥", lbl="Triggerbot"},
 }
 
 local QB_SIZE  = IsMob and 64 or 52
@@ -2870,8 +2756,8 @@ end
 AddHdr("Combat", "🎯", "hdr_aiming")
 MkToggleBind("Combat", "🎯", "lbl_auto_aim", "Aim", "desc_auto_aim")
 MkToggleBind("Combat", "🔇", "lbl_silent_aim", "SilentAim", "desc_silent_aim")
-MkToggleBind("Combat", "🔫", "lbl_trigger_bot", "TriggerBot", "desc_trigger_bot")
 MkToggle("Combat", "🧲", "lbl_shadow_lock", "ShadowLock", "desc_shadow_lock")
+MkToggleBind("Combat", "🔥", "lbl_triggerbot", "Triggerbot", "desc_triggerbot")
 AddHdr("Combat", "💥", "hdr_hitbox_esp")
 MkToggle("Combat", "📦", "lbl_hitbox", "Hitbox", "desc_hitbox")
 MkToggle("Combat", "👁", "lbl_esp", "ESP", "desc_esp")
@@ -3181,12 +3067,7 @@ end) end
 end)()
 
 -- INPUT
-local freecamDragging = false
 UIS.InputBegan:Connect(function(inp, gpe)
-    if inp.UserInputType == Enum.UserInputType.MouseButton2 then
-        freecamDragging = true
-    end
-
     if waitingBind then
         if inp.UserInputType == Enum.UserInputType.Keyboard then
             local key = inp.KeyCode; local nm = waitingBind
@@ -3217,15 +3098,9 @@ UIS.InputBegan:Connect(function(inp, gpe)
     end
 end)
 
-UIS.InputEnded:Connect(function(inp, gpe)
-    if inp.UserInputType == Enum.UserInputType.MouseButton2 then
-        freecamDragging = false
-    end
-end)
-
 UIS.InputChanged:Connect(function(inp, gpe)
     if not State.Freecam then return end
-    if inp.UserInputType == Enum.UserInputType.MouseMovement and freecamDragging then
+    if inp.UserInputType == Enum.UserInputType.MouseMovement then
         FC_Y = FC_Y - math.rad(inp.Delta.X * 0.35)
         FC_P = math.clamp(FC_P - math.rad(inp.Delta.Y * 0.35), -math.rad(89), math.rad(89))
     end
@@ -3414,8 +3289,44 @@ RunService.RenderStepped:Connect(function(dt)
 end)
 end)()
 
+-- ============================================================
+-- TRIGGERBOT LOGIC
+-- ============================================================
+local tbCooldown = 0
+local function UpdateTriggerbot()
+    if not State.Triggerbot or State.Freecam then return end
+    local now = tick()
+    if now < tbCooldown then return end
+
+    local rayParams = RaycastParams.new()
+    rayParams.FilterType = Enum.RaycastFilterType.Exclude
+    rayParams.FilterDescendantsInstances = {LP.Character or nil}
+    
+    local result = Workspace:Raycast(Camera.CFrame.Position, Camera.CFrame.LookVector * 5000, rayParams)
+    if result and result.Instance then
+        local hitChar = result.Instance:FindFirstAncestorOfClass("Model")
+        if hitChar then
+            local player = Players:GetPlayerFromCharacter(hitChar)
+            if player and player ~= LP and IsAlive(hitChar) then
+                if mouse1click then
+                    mouse1click()
+                else
+                    pcall(function()
+                        VirtualUser:Button1Down(Vector2.new())
+                        task.wait(0.01)
+                        VirtualUser:Button1Up(Vector2.new())
+                    end)
+                end
+                tbCooldown = now + 0.05
+            end
+        end
+    end
+end
+
 -- HEARTBEAT
 RunService.Heartbeat:Connect(function(dt)
+    UpdateTriggerbot()
+
     local Char = LP.Character
     local HRP = Char and Char:FindFirstChild("HumanoidRootPart")
     local Hum = Char and Char:FindFirstChildOfClass("Humanoid")
