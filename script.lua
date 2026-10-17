@@ -42,7 +42,7 @@ end)
 
 if IsMobile then
     pcall(function()
-        settings().Rendering.QualityLevel = 1
+        settings().Rendering.QualityLevel = Enum.QualityLevel.Level01
         Light.GlobalShadows = false
         Light.FogEnd = 9e9
         Light.Brightness = 1
@@ -613,7 +613,7 @@ local function DoJoinBigServer()
 end
 
 -- ============================================================
--- SMART ITEM & CONTAINER MATCHING ENGINE (ANTI-BUY STAND GUARD)
+-- SMART ITEM & CONTAINER MATCHING ENGINE
 -- ============================================================
 local function IsInsidePlayerCharacter(obj)
     if not obj then return false end
@@ -885,7 +885,7 @@ local function SafeFirePrompt(prompt, attempts)
 end
 
 -- ============================================================
--- AUTO FARM & INSTA-SNIPE + EXACT WORKSPACE.GAME CACHES
+-- AUTO FARM & INSTA-SNIPE
 -- ============================================================
 local farmRunning = false
 local farmStats = {collected=0, skipped=0, lastItem=""}
@@ -1360,7 +1360,7 @@ task.spawn(function()
 end)
 
 -- ============================================================
--- 🏧 AUTO ATM, REGISTER & SAFE FARM (v.Screen Check + Snipe Pause)
+-- AUTO ATM, REGISTER & SAFE FARM
 -- ============================================================
 local atmStats = {broken=0, cashCollected=0}
 local atmCooldowns = {}
@@ -1610,7 +1610,7 @@ task.spawn(function()
 end)
 
 -- ============================================================
--- 🏦 SMART BANK ROBBERY V80 (GEMS + CASH + GOLD SAFES + COOLDOWN CHECK)
+-- SMART BANK ROBBERY V80
 -- ============================================================
 local VAULT_RADIUS = 48
 local bankStats = {robberies=0, itemsLooted=0}
@@ -1639,13 +1639,11 @@ local function IsPromptInsideBankVault(prompt)
         return false, nil, nil
     end
 
-    -- 1. Перевіряємо через основний реєстр предметів (Dark Matter Gem, Void Gem, Diamond, Golden Crown, Rollie тощо)
     local matchedItem = ResolvePromptItemName(prompt)
     if matchedItem then
         return true, pos, matchedItem
     end
 
-    -- 2. Перевіряємо специфічні стопки грошей та об'єкти банківського сховища
     local ft = pn .. " " .. gpn .. " " .. ob .. " " .. at
     if ft:find("steal", 1, true) or ft:find("rob", 1, true) or ft:find("vault", 1, true)
         or ft:find("money", 1, true) or ft:find("cash", 1, true) or ft:find("gold", 1, true)
@@ -1720,14 +1718,11 @@ local function ExecuteSmartBankSweep(manualTrigger)
 
     ScanWorkspaceContainers()
     local promptsList, safesList, bundlesList = GetBankVaultTargets()
-
-    -- Якщо користувач натиснув кнопку вручну, а ми далеко від банку (стрімінг-радіус Roblox міг ще не підвантажити об'єкти)
     local root = GetRoot()
     local savedOrigin = root and root.Position or COORDS.SAFE_ZONE
 
     if #promptsList == 0 and #safesList == 0 and #bundlesList == 0 then
         if not manualTrigger and root and (root.Position - COORDS.BANK_MONEY).Magnitude < 180 then
-            -- Ми поруч, і банк точно порожній (на кулдауні)
             return false
         end
     end
@@ -1738,7 +1733,6 @@ local function ExecuteSmartBankSweep(manualTrigger)
     bankRobInProgress = true
     local totalLootedThisRun = 0
 
-    -- Крок 1: Телепорт у сховище для підвантаження всіх об'єктів та швидкої перевірки
     SafeTeleport(COORDS.BANK_MONEY)
     task.wait(0.35)
     ScanWorkspaceContainers()
@@ -1759,7 +1753,6 @@ local function ExecuteSmartBankSweep(manualTrigger)
 
     Notify("🏦 BANK RAID", string.format("Знайдено: %d лут | %d сейфів | %d кеш", #promptsList, #safesList, #bundlesList), 2.5)
 
-    -- Крок 2: Збираємо всі промпти у сховищі (Dark Matter Gem, Void Gem, Diamond, Стопки грошей)
     for pass = 1, 2 do
         if not ScriptAlive or not bankRobInProgress or not IsHumAlive() then break end
         promptsList, safesList, bundlesList = GetBankVaultTargets()
@@ -1787,7 +1780,6 @@ local function ExecuteSmartBankSweep(manualTrigger)
             end
         end
 
-        -- Крок 3: Ламаємо Золоті та Великі сейфи всередині сховища
         if Config.BankBreakSafes and #safesList > 0 then
             for _, sEntry in ipairs(safesList) do
                 if not ScriptAlive or not bankRobInProgress or not IsHumAlive() then break end
@@ -1825,7 +1817,6 @@ local function ExecuteSmartBankSweep(manualTrigger)
             end
         end
 
-        -- Крок 4: Збираємо всі пачки CashBundle, що лежать або випали в сховищі
         _, _, bundlesList = GetBankVaultTargets()
         for _, bEntry in ipairs(bundlesList) do
             if not ScriptAlive or not bankRobInProgress or not IsHumAlive() then break end
@@ -1840,7 +1831,6 @@ local function ExecuteSmartBankSweep(manualTrigger)
         task.wait(0.15)
     end
 
-    -- Крок 5: Відхід у Safe Zone або повернення на попередню точку
     if IsHumAlive() and not snipeInProgress then
         if Config.BankReturnSafeZone then
             SafeTeleport(COORDS.SAFE_ZONE)
@@ -1864,7 +1854,6 @@ local function StartRobbery()
     end)
 end
 
--- Фоновий цикл AutoBank (перевіряє сховище і грабує тільки коли банк активний)
 task.spawn(function()
     local lastRemoteProbe = 0
     while ScriptAlive do
@@ -1878,7 +1867,6 @@ task.spawn(function()
         local promptsList, safesList, bundlesList = GetBankVaultTargets()
         local hasTargets = (#promptsList > 0) or (#safesList > 0) or (#bundlesList > 0)
 
-        -- Якщо ми далеко від банку і кеш порожній через StreamingEnabled, раз на N секунд перевіряємо сховище
         local probeInterval = math.max((Config.BankCheckInterval or 4) * 5, 12)
         if hasTargets or (tick() - lastRemoteProbe >= probeInterval) then
             lastRemoteProbe = tick()
@@ -2011,10 +1999,24 @@ local function GetClosestByDist()
     return best
 end
 
+-- ============================================================
+-- SAFE CONTROLS RETRIEVAL
+-- ============================================================
 local Controls = nil
 task.spawn(function()
-    if not game:IsLoaded() then game.Loaded:Wait() end; task.wait(1)
-    pcall(function() Controls = require(lp:WaitForChild("PlayerScripts"):WaitForChild("PlayerModule",5)):GetControls() end)
+    if not game:IsLoaded() then game.Loaded:Wait() end
+    task.wait(1)
+    pcall(function()
+        local ps = lp:WaitForChild("PlayerScripts", 10)
+        if not ps then return end
+        local pm = ps:WaitForChild("PlayerModule", 10)
+        if not pm then return end
+        local safeRequire = (getrenv and getrenv().require) or require
+        local moduleRes = safeRequire(pm)
+        if type(moduleRes) == "table" and moduleRes.GetControls then
+            Controls = moduleRes:GetControls()
+        end
+    end)
 end)
 
 local MobUp, MobDn = false, false
@@ -2136,7 +2138,11 @@ end))
 local fpsApplied = false
 local function ApplyFPS()
     if fpsApplied then return end; fpsApplied = true
-    pcall(function() settings().Rendering.QualityLevel=1; Light.GlobalShadows=false; Light.FogEnd=9e9 end)
+    pcall(function()
+        settings().Rendering.QualityLevel = Enum.QualityLevel.Level01
+        Light.GlobalShadows = false
+        Light.FogEnd = 9e9
+    end)
     for _, v in pairs(Light:GetChildren()) do
         pcall(function()
             if v:IsA("BloomEffect") or v:IsA("BlurEffect") or v:IsA("SunRaysEffect") or v:IsA("DepthOfFieldEffect") or v:IsA("ColorCorrectionEffect") then v.Enabled=false end
@@ -2353,8 +2359,19 @@ TrackConn(RS.RenderStepped:Connect(function(dt)
         if root and hum then
             hum.PlatformStand = false
             local mx, mz = 0, 0
-            if IsMobile and Controls then
-                local mv = Controls:GetMoveVector(); mx=mv.X; mz=mv.Z
+            if IsMobile then
+                local moved = false
+                if Controls then
+                    local ok, mv = pcall(function() return Controls:GetMoveVector() end)
+                    if ok and mv then
+                        mx = mv.X; mz = mv.Z
+                        moved = true
+                    end
+                end
+                if not moved and hum.MoveDirection.Magnitude > 0 then
+                    local rel = Camera.CFrame:VectorToObjectSpace(hum.MoveDirection)
+                    mx = rel.X; mz = rel.Z
+                end
             elseif IsPC then
                 if UIS:IsKeyDown(Enum.KeyCode.W) then mz=-1 end
                 if UIS:IsKeyDown(Enum.KeyCode.S) then mz=1 end
@@ -2602,7 +2619,7 @@ TrackConn(lp.CharacterAdded:Connect(function(char)
 end))
 
 -- ============================================================
--- V80 GUI WITH RIGHT-CLICK & ⚙ SETTINGS DRAWERS
+-- GUI WITH DRAWERS & SETTINGS
 -- ============================================================
 local safeScreenSize = Camera and Camera.ViewportSize or Vector2.new(1000,1000)
 local isSmallScreen = IsMobile and (safeScreenSize.Y < 700 or safeScreenSize.X < 400)
@@ -2997,11 +3014,11 @@ local function AddDrawerSubToggle(drawer, label, cKey, cb)
         if Config[cKey] then
             b.BackgroundColor3 = Color3.fromRGB(18,75,45)
             b.TextColor3 = Color3.fromRGB(130,255,165)
-            b.Text = "  ✓ " .. label .. ": ON"
+            b.Text = "   ✓ " .. label .. ": ON"
         else
             b.BackgroundColor3 = Color3.fromRGB(35,22,28)
             b.TextColor3 = Color3.fromRGB(235,130,130)
-            b.Text = "  ✗ " .. label .. ": OFF"
+            b.Text = "   ✗ " .. label .. ": OFF"
         end
     end
     Upd()
@@ -3176,7 +3193,7 @@ local function AddTP(tab, name, vec)
 end
 
 -- ============================================================
--- BUILD TABS (COMBAT, MOVE, FARM, MISC)
+-- BUILD TABS
 -- ============================================================
 do
     AddCategory("Combat","AIM & ESP (ПКМ або ⚙ = Настройки)")
@@ -3324,7 +3341,7 @@ do
 end
 
 -- ============================================================
--- ITEMS TAB (DUAL PICKER: ✓ AUTO FARM + 🎯 AUTO SNIPE)
+-- ITEMS TAB
 -- ============================================================
 local itemBtns = {}
 local sB
@@ -3437,11 +3454,11 @@ do
                 if ItemPickerState[iN] then
                     b.BackgroundColor3 = Color3.fromRGB(16,58,34)
                     b.TextColor3 = Color3.fromRGB(120,255,155)
-                    b.Text = "  ✓ " .. iN
+                    b.Text = "   ✓ " .. iN
                 else
                     b.BackgroundColor3 = Color3.fromRGB(42,18,22)
                     b.TextColor3 = Color3.fromRGB(235,120,125)
-                    b.Text = "  ✗ " .. iN
+                    b.Text = "   ✗ " .. iN
                 end
                 if SnipePickerState[iN] then
                     snipeBtn.BackgroundColor3 = Color3.fromRGB(195,115,10)
@@ -3500,7 +3517,7 @@ do
             local isActive = (currentThemeIndex == idx)
             if isActive then
                 themeStroke.Color=Color3.new(1,1,1); themeBtn.BackgroundColor3=theme.primary
-                themeBtn.TextColor3=Color3.new(1,1,1); themeBtn.Text=theme.name.."  ✓ ACTIVE"
+                themeBtn.TextColor3=Color3.new(1,1,1); themeBtn.Text=theme.name.."   ✓ ACTIVE"
             else
                 themeStroke.Color=theme.primary; themeBtn.BackgroundColor3=Color3.fromRGB(18,20,30)
                 themeBtn.TextColor3=Color3.fromRGB(200,205,220); themeBtn.Text=theme.name
@@ -3611,7 +3628,7 @@ do
 end
 
 -- ============================================================
--- REVERSE PATH (CLEANUP)
+-- CLEANUP
 -- ============================================================
 getgenv().MarkiyanCleanup = function()
     ScriptAlive = false
